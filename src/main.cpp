@@ -12,8 +12,8 @@
 #include "camera.h"
 #include "shapes.h"
 
-int window_width = 1200;
-int window_height = 900;
+int window_width = 1920;
+int window_height = 1080;
 glm::vec3 cam_pos = glm::vec3(0.0f, 0.0f, 5.0f);
 glm::vec3 yup = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -125,7 +125,7 @@ int main()
 		auto view = camera.getViewMatrix();
 
 		glm::vec3 light_pos(1.2f, 1.0f, 1.5f);
-		glm::vec3 light_color(1.0f, 1.0f, 1.0f);
+		glm::vec3 light_color(.5f, .5f, .5f);
 
 		white_shader.use();
 		white_shader.setFloat("uTime", current_frame);
@@ -152,10 +152,14 @@ int main()
 		lighting_shader.setMat4("view", view);
 		lighting_shader.setMat4("projection", projection);
 
-		lighting_shader.setVec3("uObjectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-		lighting_shader.setVec3("uAmbientLight", glm::vec3(0.1f, 0.1f, 0.1f));
-		lighting_shader.setVec3("uLightColor", light_color);
-		lighting_shader.setVec3("uLightPos", light_pos);
+		lighting_shader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+		lighting_shader.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+		lighting_shader.setVec3("material.specular", glm::vec3(.5f, 0.5f, 0.5f));
+		lighting_shader.setFloat("material.shininess", 32.0f);
+		lighting_shader.setVec3("light.pos", light_pos);
+		lighting_shader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+		lighting_shader.setVec3("light.diffuse", light_color);
+		lighting_shader.setVec3("light.specular", glm::vec3(1.0f));
 		lighting_shader.setVec3("uCameraPos", camera.position);
 
 		glBindVertexArray(cube_vao);
