@@ -123,6 +123,12 @@ public:
 		// 1 matrix to send, GL_FALSE don't transpose matrxi, collumn major order in GLM
 		glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr(rts));
 	}
+
+	void setMat3(const std::string& name, glm::mat3& rts)
+	{
+		// 1 matrix to send, GL_FALSE don't transpose matrxi, collumn major order in GLM
+		glUniformMatrix3fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr(rts));
+	}
 };
 
 #endif

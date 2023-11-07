@@ -14,13 +14,14 @@ const float SPEED = 2.5f;
 const float SENSITIVITY = 0.075f;
 const float ZOOM = 45.0f;
 
-
 class Camera
 {
 public:
 	glm::vec3 position;
 	glm::vec3 w, u, v;
 	glm::vec3 yup;
+
+	glm::mat4 view_matrix;
 
 	int width;
 	int height;
@@ -40,11 +41,13 @@ public:
 		yup = _yup;
 		resize(_width, _height);
 		updateVectors();
+		getViewMatrix();
 	}
 
 	glm::mat4 getViewMatrix()
 	{
-		return glm::lookAt(position, position + w, yup);
+		view_matrix = glm::lookAt(position, position + w, yup);
+		return view_matrix;
 	}
 
 	glm::mat4 getProjectionMatrix()
@@ -61,8 +64,10 @@ public:
 
 	void processKeyboard(const glm::vec3& direction, float delta_time)
 	{
+		// Dir(only rotation) is transformed from object space(camera) to word space.
 		float velocity = movement_speed * delta_time;
-		position += glm::inverse(glm::mat3(getViewMatrix())) * -direction * velocity;
+		glm::mat3 inv_rot_view = glm::inverse(glm::mat3(view_matrix));
+		position += inv_rot_view * -direction * velocity;
 	}
 
 	void processMouseMovement(float xoffset, float yoffset, GLboolean constrain_pitch = true)
