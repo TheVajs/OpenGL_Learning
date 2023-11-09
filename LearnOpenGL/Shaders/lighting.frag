@@ -10,8 +10,8 @@ out vec4 FragColor;
 // aabb = axis align bounding box
 struct Material {
 	bool light_maps;
-	sampler2D diffuse_map;
-	sampler2D specular_map;
+	sampler2D texture_diffuse1;
+	sampler2D texture_specular1;
 	vec3 diffuse;
 	vec3 specular;
 	float shininess;
@@ -26,8 +26,8 @@ struct Surface {
 Surface GetSurface(Material material) {
 	Surface surface;
 	if (material.light_maps) {
-		surface.diffuse = vec3(texture(material.diffuse_map, TexCoords));
-		surface.specular = vec3(texture(material.specular_map, TexCoords));
+		surface.diffuse = vec3(texture(material.texture_diffuse1, TexCoords));
+		surface.specular = vec3(texture(material.texture_specular1, TexCoords));
 	} else {
 		surface.diffuse = material.diffuse;
 		surface.specular = material.specular;

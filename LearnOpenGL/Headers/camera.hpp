@@ -1,5 +1,4 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -22,7 +21,6 @@ namespace Simp
 		glm::vec3 position;
 		glm::vec3 w, u, v;
 		glm::vec3 yup;
-
 		glm::mat4 view_matrix;
 
 		int width;
@@ -35,12 +33,14 @@ namespace Simp
 		float mouse_sensitivity;
 		float zoom;
 
-		Camera(glm::vec3 _position, glm::vec3 _yup, int _width, int _height) : w(glm::vec3(0.0f, 0.0f, -1.0f)), yaw(YAW), pitch(PITCH),
+		Camera(glm::vec3 position, glm::vec3 yup, int width, int height) : yaw(YAW), pitch(PITCH),
 			movement_speed(SPEED), mouse_sensitivity(SENSITIVITY), zoom(ZOOM), z_near(0.1f), z_far(100.0f)
 		{
-			position = _position;
-			yup = _yup;
-			resize(_width, _height);
+			this->position = position;
+			this->yup = yup;
+			
+			resize(width, height);
+
 			updateVectors();
 			getViewMatrix();
 		}
@@ -112,5 +112,3 @@ namespace Simp
 		}
 	};
 }
-
-#endif
