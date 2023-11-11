@@ -55,7 +55,7 @@ namespace Simp
 			glCompileShader(vertexShader);
 
 			glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-			if (!status)
+			if (status != GL_TRUE)
 			{
 				glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 				std::unique_ptr<char[]> infoLog(new char[length]);
@@ -69,7 +69,7 @@ namespace Simp
 			glCompileShader(fragmentShader);
 
 			glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-			if (!status)
+			if (status != GL_TRUE)
 			{
 				glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 				std::unique_ptr<char[]> infoLog(new char[length]);
@@ -81,15 +81,18 @@ namespace Simp
 			id = glCreateProgram();
 			glAttachShader(id, vertexShader);
 			glAttachShader(id, fragmentShader);
-			glDeleteShader(vertexShader);
-			glDeleteShader(fragmentShader);
+		}
+
+		~Shader() 
+		{
+			glDeleteProgram(id);
 		}
 
 		Shader& link()
 		{
 			glLinkProgram(id);
 			glGetProgramiv(id, GL_LINK_STATUS, &status);
-			if (!status)
+			if (status != GL_TRUE)
 			{
 				glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 				std::unique_ptr<char[]> infoLog(new char[length]);
@@ -135,6 +138,11 @@ namespace Simp
 		void setMat3(const std::string& name, glm::mat3& rts)
 		{
 			glUniformMatrix3fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, glm::value_ptr(rts));
+		}
+
+		GLuint getHandle() const
+		{
+			return id;
 		}
 
 	private:

@@ -6,8 +6,18 @@ namespace Simp
 {
 	Model::Model(const std::string& path)
 	{
+#if DEBUG_ASSIMP
+		Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE);
+		Assimp::LogStream* stderrStream = Assimp::LogStream::createDefaultStream(aiDefaultLogStream_STDERR);
+		Assimp::DefaultLogger::get()->attachStream(stderrStream, Assimp::Logger::NORMAL | Assimp::Logger::DEBUGGING | Assimp::Logger::VERBOSE);
+#endif
+
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+		const aiScene* scene = importer.ReadFile(path,
+			aiProcess_GenSmoothNormals |
+			aiProcess_CalcTangentSpace |
+			aiProcess_Triangulate |
+			aiProcess_FlipUVs);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
@@ -18,31 +28,31 @@ namespace Simp
 		directory = path.substr(0, path.find_last_of('/'));
 
 		processNode(scene->mRootNode, scene);
+		// const aiNode* node = scene->mRootNode->mChildren[0];
+		// processMesh(scene->mMeshes[node->mMeshes[0]], scene);
 	}
 
 	void Model::draw(const Shader& shader)
 	{
 		for (int i = 0; i < meshes.size(); i++)
 		{
-			meshes[i].draw(shader);
+			meshes[i].get()->draw(shader);
 		}
 	}
 
-	void Model::processNode(aiNode* node, const aiScene* scene)
+	void Model::processNode(const aiNode* node, const aiScene* scene)
 	{
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
-			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			meshes.push_back(processMesh(mesh, scene));
+			processMesh(scene->mMeshes[node->mMeshes[i]], scene);
 		}
-
 		for (unsigned int i = 0; i < node->mNumChildren; i++)
 		{
 			processNode(node->mChildren[i], scene);
 		}
 	}
 
-	Simp::Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+	void Model::processMesh(const aiMesh* mesh, const aiScene* scene)
 	{
 		std::vector<Vertex> vertices;
 		std::vector<GLuint> indices;
@@ -51,31 +61,16 @@ namespace Simp
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
 			Vertex vertex;
-			glm::vec3 temp;
-
-			temp.x = mesh->mVertices[i].x;
-			temp.y = mesh->mVertices[i].y;
-			temp.z = mesh->mVertices[i].z;
-			vertex.position = temp;
-
-			if (mesh->HasNormals())
-            {
-				temp.x = mesh->mNormals[i].x;
-				temp.y = mesh->mNormals[i].y;
-				temp.z = mesh->mNormals[i].z;
-				vertex.normal = temp;
-			}
+			vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+			vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 
 			if (mesh->mTextureCoords[0])
 			{
-				glm::vec2 vec;
-				vec.x = mesh->mTextureCoords[0][i].x;
-				vec.y = mesh->mTextureCoords[0][i].y;
-				vertex.uv1 = vec;
+				vertex.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 			}
 			else
 			{
-				vertex.uv1 = glm::vec2(0.0f, 0.0f);
+				vertex.uv = glm::vec2(0.0f, 0.0f);
 			}
 
 			vertices.push_back(vertex);
@@ -83,38 +78,36 @@ namespace Simp
 
 		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 		{
-			aiFace face = mesh->mFaces[i];
-			for (unsigned int j = 0; j < face.mNumIndices; j++)
+			for (unsigned int j = 0; j < mesh->mFaces[i].mNumIndices; j++)
 			{
-				indices.push_back(face.mIndices[j]);
+				indices.push_back(mesh->mFaces[i].mIndices[j]);
 			}
 		}
 
 		if (mesh->mMaterialIndex >= 0)
 		{
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			std::vector<Texture> diffuseTextures = loadMaterialTextures(material, aiTextureType_DIFFUSE,
+			auto diffuse = loadMaterialTextures(material, aiTextureType_DIFFUSE,
 				Simp::TextureType::Diffuse);
-			std::vector<Texture> specularTextures = loadMaterialTextures(material, aiTextureType_SPECULAR,
+			auto specular = loadMaterialTextures(material, aiTextureType_SPECULAR,
 				Simp::TextureType::Specular);
 
-			textures.insert(textures.end(), diffuseTextures.begin(), diffuseTextures.end());
-			textures.insert(textures.end(), specularTextures.begin(), specularTextures.end());
+			textures.insert(textures.begin(), diffuse.begin(), diffuse.end());
+			textures.insert(textures.begin(), specular.begin(), specular.end());
 		}
 
-		return Simp::Mesh(vertices, indices, textures);
+		meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, textures)));
 	}
 
 	std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType aiType, TextureType type)
 	{
 		std::vector<Texture> textures;
-
 		for (unsigned int i = 0; i < mat->GetTextureCount(aiType); i++)
 		{
 			aiString str;
 			mat->GetTexture(aiType, i, &str);
-			std::string relPath = std::string(str.C_Str());
 
+			auto relPath = std::string(str.C_Str());
 			bool skip = false;
 			for (unsigned int j = 0; j < texturesLoaded.size(); j++)
 			{
@@ -126,7 +119,7 @@ namespace Simp
 				}
 			}
 
-			if (!skip)
+			if (skip)
 				return textures;
 
 			Texture texture;

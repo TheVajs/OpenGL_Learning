@@ -11,7 +11,7 @@ namespace Simp
 	{
 		glm::vec3 position;
 		glm::vec3 normal;
-		glm::vec2 uv1;
+		glm::vec2 uv;
 	};
 
 	enum TextureType
@@ -30,6 +30,10 @@ namespace Simp
 	class Mesh
 	{
 	public:
+		GLuint vao;
+		GLuint vbo;
+		GLuint ebo;
+
 		std::vector<Vertex> vertices;
 		std::vector<GLuint> indices;
 		std::vector<Texture> textures;
@@ -38,18 +42,16 @@ namespace Simp
 			 const std::vector<GLuint>& _indices,
 			 const std::vector<Texture>& _textures);
 
-		~Mesh() { glDeleteVertexArrays(1, &vao); }
+		~Mesh()
+		{
+			glDeleteVertexArrays(1, &vao);
+		}
 
 		void draw(const Shader& shader);
 
 	private:
-
 		// Disable Copying and Assignment
-		// Mesh(Mesh const&) = delete;
-		// Mesh& operator=(Mesh const&) = delete;
-
-		GLuint vao;
-		GLuint vbo;
-		GLuint ebo;
+		Mesh(Mesh const&) = delete;
+		Mesh& operator=(Mesh const&) = delete;
 	};
 }
