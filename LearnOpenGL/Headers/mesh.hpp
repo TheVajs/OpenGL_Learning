@@ -47,7 +47,7 @@ namespace Simp
 			glDeleteVertexArrays(1, &vao);
 		}
 
-		void draw(const Shader& shader);
+		void draw(Shader& shader);
 
 	private:
 		// Disable Copying and Assignment

@@ -59,6 +59,7 @@ float attenuation(Light light, float d) {
 #endif
 }
 
+// uniform float uTime;
 uniform Material material;
 uniform Light light;
 

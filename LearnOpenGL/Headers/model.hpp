@@ -36,7 +36,7 @@ namespace Simp
 #endif
 		}
 
-		void draw(const Shader& shader);
+		void draw(Shader& shader);
 	private:
 		std::vector<std::unique_ptr<Mesh>> meshes;
 		std::vector<Texture> texturesLoaded;

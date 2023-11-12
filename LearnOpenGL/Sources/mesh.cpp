@@ -38,7 +38,7 @@ namespace Simp
 		glDeleteBuffers(1, &ebo);
 	}
 
-	void Mesh::draw(const Shader& shader)
+	void Mesh::draw(Shader& shader)
 	{
 		unsigned int diffuseNum = 0;
 		unsigned int specularNum = 0;
@@ -50,12 +50,12 @@ namespace Simp
 			else if (textures[i].type == 1)
 				uniform += "texture_specular" + std::to_string(specularNum++);
 
-			shader.setInt(uniform, i);
+			shader.bind(glGetUniformLocation(shader.getHandle(), uniform.c_str()), i);
 			glActiveTexture(GL_TEXTURE0 + i);
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
 
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, static_cast<GLuint>(indices.size()), GL_UNSIGNED_INT, 0);
 	}
 }

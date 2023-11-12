@@ -65,10 +65,8 @@ namespace Simp
 
 		void processKeyboard(const glm::vec3& direction, float delta_time)
 		{
-			// Dir(only rotation) is transformed from object space(camera) to word space.
-			float velocity = movement_speed * delta_time;
-			glm::mat3 inv_rot_view = glm::inverse(glm::mat3(view_matrix));
-			position += inv_rot_view * -direction * velocity;
+			glm::mat3 invRot = glm::inverse(glm::mat3(getViewMatrix()));
+			position += invRot * -direction * (movement_speed * delta_time);
 		}
 
 		void processMouseMovement(float xoffset, float yoffset, GLboolean constrain_pitch = true)

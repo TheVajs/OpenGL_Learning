@@ -8,6 +8,7 @@
 #include "camera.hpp"
 #include "model.hpp"
 #include "models.hpp"
+#include "debug.hpp"
 
 // Standard headers
 #include <cstdio>
@@ -26,31 +27,13 @@ void ProcessInput(GLFWwindow* window, double deltatime);
 void MouseCallback(GLFWwindow* window, double x_pos, double y_pos);
 void ScrollCallback(GLFWwindow* window, double x_offset, double y_offset);
 
-#ifndef NDEBUG
-void GLAPIENTRY
-MessageCallback(GLenum source,
-				 GLenum type,
-				 GLuint id,
-				 GLenum severity,
-				 GLsizei length,
-				 const GLchar* message,
-				 const void* userParam)
-{
-	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-			 (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-			  type, severity, message);
-}
-#endif
-
 int main()
 {
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	auto window = glfwCreateWindow(window_width, window_height, "LearnOpenGL", NULL, NULL);
 	if (window == NULL)
@@ -63,70 +46,31 @@ int main()
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 	glfwSetCursorPosCallback(window, MouseCallback);
 	glfwSetScrollCallback(window, ScrollCallback);
-
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	stbi_set_flip_vertically_on_load(true);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) 
 	{
 		std::cout << "Failed to initialize 	GLAD." << std::endl;
 		return -1;
 	}
+	// fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
+	Simp::debug();
 
-	stbi_set_flip_vertically_on_load(true);
-
-#ifndef NDEBUG
-	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(MessageCallback, 0);
-#endif
-
-	glEnable(GL_DEPTH_TEST);
-
-	Simp::Shader lighting_shader("lighting.vert", "lighting.frag");
-	lighting_shader.link();
-	Simp::Shader white_shader("white.vert", "white.frag");
-	white_shader.link();
+	Simp::Shader phongShader;
+	phongShader.attach("lighting.vert").attach("lighting.frag").link();
+	Simp::Shader whiteShader;
+	whiteShader.attach("white.vert").attach("white.frag").link();
 
 	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/backpack/backpack.obj");
-
-	GLuint cube_vbo;
-	glGenBuffers(1, &cube_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_all), cube_all, GL_STATIC_DRAW);
-
-	// GLuint cube_vao;
-	// glGenVertexArrays(1, &cube_vao);
-	// glBindVertexArray(cube_vao);
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	// glEnableVertexAttribArray(0);
-	// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	// glEnableVertexAttribArray(1);
-	// glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	// glEnableVertexAttribArray(2);
-
-	unsigned int light_cube_vao;
-	glGenVertexArrays(1, &light_cube_vao);
-	glBindVertexArray(light_cube_vao);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glBindVertexArray(0);
-
-	// unsigned int plane_vao, plane_vbo;
-	// glGenVertexArrays(1, &plane_vao);
-	// glGenBuffers(1, &plane_vbo);
-	// glBindVertexArray(plane_vao);
-	// glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
-	// glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_plane), vertices_plane, GL_STATIC_DRAW);
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	// glEnableVertexAttribArray(0);
-	// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	// glEnableVertexAttribArray(1);
-
-	// GLuint diffuse_map = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/container2.png");
-	// GLuint specular_map = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/container2_specular.png");
+	auto plane_vao = Simp::createPlane();
+	auto light_cube_vao = Simp::createCube();
 
 	float currentframe = 0.0f;
 	float previousframe = 0.0f;
 	float deltatime;
+
+	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -146,14 +90,13 @@ int main()
 		glm::vec3 light_pos(1.2f, 0.5f, 1.5f);
 		glm::vec3 light_color(.8f, .8f, .8f);
 
-		white_shader.use();
-		white_shader.setFloat("uTime", currentframe);
-		white_shader.setMat4("view", view);
-		white_shader.setMat4("projection", projection);
+		whiteShader.use();
+		whiteShader.bind("view", view);
+		whiteShader.bind("projection", projection);
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, light_pos);
 		model = glm::scale(model, glm::vec3(0.2f));
-		white_shader.setMat4("model", model);
+		whiteShader.bind("model", model);
 
 		glBindVertexArray(light_cube_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -161,84 +104,46 @@ int main()
 
 		glm::mat4 model_backpack = glm::mat4(1.0f);
 		model_backpack = glm::translate(model_backpack, glm::vec3(0.0f, 1.0f, 0.0f));
-		model_backpack = glm::scale(model_backpack, glm::vec3(1.0f, 1.0f, 1.0f));
+		model_backpack = glm::scale(model_backpack, glm::vec3(0.5f, 0.5f, 0.5f));
 		glm::mat3 invModel = glm::mat3(glm::inverseTranspose(model_backpack));
 
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, diffuse_map);
-		// glActiveTexture(GL_TEXTURE1);
-		// glBindTexture(GL_TEXTURE_2D, specular_map);
+		phongShader.use();
+		// phongShader.bind("uTime", currentframe);de2wqd
+		phongShader.bind("model", model_backpack);
+		phongShader.bind("view", view);
+		phongShader.bind("projection", projection);
+		phongShader.bind("normal_model", invModel);
+		phongShader.bind("material.light_maps", true);
+		phongShader.bind("material.shininess", 32.0f);
+		phongShader.bind("light.pos", light_pos);
+		phongShader.bind("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+		phongShader.bind("light.diffuse", light_color);
+		phongShader.bind("light.specular", glm::vec3(1.0f));
+		phongShader.bind("uCameraPos", camera.position);
+		phongShader.bind("light.constant", 1.0f);
+		phongShader.bind("light.linear", 0.09f);
+		phongShader.bind("light.quadratic", 0.032f);
+		backpack.draw(phongShader);
 
-		// lighting_shader.use();
-		// lighting_shader.setFloat("uTime", currentframe);
-		// lighting_shader.setMat4("model", model);
-		// lighting_shader.setMat4("view", view);
-		// lighting_shader.setMat4("projection", projection);
-		// lighting_shader.setMat3("normal_model", invModel);
-
-		// lighting_shader.setBool("material.light_maps", true);
-		// lighting_shader.setInt("material.texture_diffuse1", 0);
-		// lighting_shader.setInt("material.texture_specular1", 1);
-		// lighting_shader.setFloat("material.shininess", 64.0f);
-		// lighting_shader.setVec3("light.pos", light_pos);
-		// lighting_shader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-		// lighting_shader.setVec3("light.diffuse", light_color);
-		// lighting_shader.setVec3("light.specular", glm::vec3(1.0f));
-		// lighting_shader.setVec3("uCameraPos", camera.position);
-		// lighting_shader.setFloat("light.constant", 1.0f);
-		// lighting_shader.setFloat("light.linear", 0.09f);
-		// lighting_shader.setFloat("light.quadratic", 0.032f);
-
-		// glBindVertexArray(cube_vao);
-		// glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		lighting_shader.use();
-		lighting_shader.setFloat("uTime", currentframe);
-		lighting_shader.setMat4("model", model_backpack);
-		lighting_shader.setMat4("view", view);
-		lighting_shader.setMat4("projection", projection);
-		lighting_shader.setMat3("normal_model", invModel);
-		lighting_shader.setBool("material.light_maps", true);
-		lighting_shader.setFloat("material.shininess", 32.0f);
-		lighting_shader.setVec3("light.pos", light_pos);
-		lighting_shader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-		lighting_shader.setVec3("light.diffuse", light_color);
-		lighting_shader.setVec3("light.specular", glm::vec3(1.0f));
-		lighting_shader.setVec3("uCameraPos", camera.position);
-		lighting_shader.setFloat("light.constant", 1.0f);
-		lighting_shader.setFloat("light.linear", 0.09f);
-		lighting_shader.setFloat("light.quadratic", 0.032f);
-		backpack.draw(lighting_shader);
-
-
-		// lighting_shader.use();
-		// glm::mat4 modelFloor = glm::mat4(1.0f);
-		// modelFloor = glm::translate(modelFloor, glm::vec3(-0.5f));
-		// modelFloor = glm::scale(modelFloor, glm::vec3(10.0f));
-		// invModel = glm::mat3(glm::inverseTranspose(modelFloor));
-		// lighting_shader.setMat4("model", modelFloor);
-		// lighting_shader.setMat4("view", view);
-		// lighting_shader.setMat4("projection", projection);
-		// lighting_shader.setMat3("normal_model", invModel);
-		// lighting_shader.setVec3("material.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
-		// lighting_shader.setVec3("material.specular", glm::vec3(1.0f));
-		// lighting_shader.setFloat("material.shininess", 32.0f);
-		// lighting_shader.setVec3("light.pos", light_pos);
-		// lighting_shader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-		// lighting_shader.setVec3("light.diffuse", light_color);
-		// lighting_shader.setVec3("light.specular", glm::vec3(1.0f));
-		// lighting_shader.setVec3("uCameraPos", camera.position);
-
-		// lighting_shader.setFloat("light.constant", 1.0f);
-		// lighting_shader.setFloat("light.linear", 0.09f);
-		// lighting_shader.setFloat("light.quadratic", 0.032f);
-
-		// glBindVertexArray(plane_vao);
-		// glDrawArrays(GL_TRIANGLES, 0, 6);
+		glm::mat4 model2(1.0f);
+		model2 = glm::translate(model2, glm::vec3(0.0f, 0.0f, 2.0f));
+		model2 = glm::scale(model2, glm::vec3(0.5f, 0.5f, 0.5f));
+		phongShader.bind("model", model2);
+		backpack.draw(phongShader);
+			
+		glm::mat4 model3(1.0f);
+		model3 = glm::translate(model3, glm::vec3(0.0f, -1.0f, 0.0f));
+		model3 = glm::scale(model3, glm::vec3(10.0f, 0.0f, 10.0f));
+		phongShader.bind("model", model3);
+		glBindVertexArray(plane_vao);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	glDeleteVertexArrays(1, &plane_vao);
+	glDeleteVertexArrays(1, &light_cube_vao);
 
 	glfwTerminate();
 	return EXIT_SUCCESS;

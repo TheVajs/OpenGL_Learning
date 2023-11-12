@@ -32,7 +32,7 @@ namespace Simp
 		// processMesh(scene->mMeshes[node->mMeshes[0]], scene);
 	}
 
-	void Model::draw(const Shader& shader)
+	void Model::draw(Shader& shader)
 	{
 		for (int i = 0; i < meshes.size(); i++)
 		{
