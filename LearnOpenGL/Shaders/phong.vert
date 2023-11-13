@@ -4,9 +4,11 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aUV;
 
-out vec3 Normal;
-out vec3 WSPosition;
-out vec2 TexCoords;
+out vs_out {
+	vec3 Normal;
+	vec3 WSPosition;
+	vec2 TexCoords;
+} varyings;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -15,8 +17,8 @@ uniform mat3 invModel;
 
 void main()
 {
-	TexCoords = aUV;
-	Normal = invModel * aNormal;
-	WSPosition = (model * vec4(aPos, 1.0f)).xyz;
-	gl_Position = projection * view * vec4(WSPosition, 1.0);
+	varyings.TexCoords = aUV;
+	varyings.Normal = invModel * aNormal;
+	varyings.WSPosition = vec3(model * vec4(aPos, 1.0f));
+	gl_Position = projection * view * vec4(varyings.WSPosition, 1.0);
 }

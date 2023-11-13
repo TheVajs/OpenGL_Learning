@@ -1,8 +1,11 @@
 #version 330 core
 
-in vec3 Normal;
-in vec3 WSPosition;
-in vec2 TexCoords;
+// Interface blocks, helps organize varying values.
+in vs_out {
+	vec3 Normal;
+	vec3 WSPosition;
+	vec2 TexCoords;
+} varyings;
 out vec4 FragColor;
 
 uniform float uTime;
@@ -32,13 +35,13 @@ struct Surface {
 
 Surface getSurface(Material material) {
 	Surface surface;
-	surface.pos = WSPosition;
-	surface.normal = normalize(Normal);
-	surface.viewDir = normalize(cameraPos - WSPosition);
+	surface.pos = varyings.WSPosition;
+	surface.normal = normalize(varyings.Normal);
+	surface.viewDir = normalize(cameraPos - varyings.WSPosition);
 
 	if (material.light_maps) {
-		surface.diffuse = vec3(texture(material.texture_diffuse0, TexCoords));
-		surface.specular = vec3(texture(material.texture_specular0, TexCoords));
+		surface.diffuse = vec3(texture(material.texture_diffuse0, varyings.TexCoords));
+		surface.specular = vec3(texture(material.texture_specular0, varyings.TexCoords));
 	} else {
 		surface.diffuse = material.diffuse;
 		surface.specular = material.specular;
