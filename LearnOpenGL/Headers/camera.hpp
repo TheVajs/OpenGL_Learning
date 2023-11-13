@@ -18,49 +18,37 @@ namespace Simp
 	class Camera
 	{
 	public:
-		glm::vec3 position;
-		glm::vec3 w, u, v;
-		glm::vec3 yup;
-		glm::mat4 view_matrix;
-
-		int width;
-		int height;
-		float aspect_ratio;
-		float z_near, z_far;
-
-		float yaw, pitch;
-		float movement_speed;
-		float mouse_sensitivity;
-		float zoom;
-
 		Camera(glm::vec3 position, glm::vec3 yup, int width, int height) : yaw(YAW), pitch(PITCH),
-			movement_speed(SPEED), mouse_sensitivity(SENSITIVITY), zoom(ZOOM), z_near(0.1f), z_far(100.0f)
+			movement_speed(SPEED), mouse_sensitivity(SENSITIVITY), zoom(ZOOM), zNear(0.1f), zFar(100.0f)
 		{
 			this->position = position;
 			this->yup = yup;
 			
 			resize(width, height);
 
-			updateVectors();
-			getViewMatrix();
+			updateLocalVectors();
 		}
 
-		glm::mat4 getViewMatrix()
+		glm::mat4 getViewMatrix() const
 		{
-			view_matrix = glm::lookAt(position, position + w, yup);
-			return view_matrix;
+			return glm::lookAt(position, position + w, yup);
 		}
 
-		glm::mat4 getProjectionMatrix()
+		glm::mat4 getProjectionMatrix() const
 		{
-			return glm::perspective(glm::radians(zoom), aspect_ratio, z_near, z_far);
+			return glm::perspective(glm::radians(zoom), aspectratio, zNear, zFar);
+		}
+
+		glm::vec3 getPosition() const
+		{
+			return position;
 		}
 
 		void resize(int _width, int _height)
 		{
 			width = _width;
 			height = _height;
-			aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+			aspectratio = static_cast<float>(width) / static_cast<float>(height);
 		}
 
 		void processKeyboard(const glm::vec3& direction, float delta_time)
@@ -85,7 +73,7 @@ namespace Simp
 					pitch = -89.0f;
 			}
 
-			updateVectors();
+			updateLocalVectors();
 		}
 
 		void processMouseScroll(float yoffset)
@@ -98,7 +86,21 @@ namespace Simp
 		}
 
 	private:
-		void updateVectors()
+		glm::vec3 position;
+		glm::vec3 w, u, v;
+		glm::vec3 yup;
+
+		int width;
+		int height;
+		float aspectratio;
+		float zNear, zFar;
+
+		float yaw, pitch;
+		float movement_speed;
+		float mouse_sensitivity;
+		float zoom;
+
+		void updateLocalVectors()
 		{
 			glm::vec3 forward;
 			forward.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

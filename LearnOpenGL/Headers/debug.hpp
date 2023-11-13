@@ -22,6 +22,8 @@ namespace Simp
 	void debug()
 	{
 #ifndef NDEBUG
+		fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
+
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(MessageCallback, 0);
 #endif
