@@ -1,7 +1,4 @@
 #include "learnOpenGL.hpp"
-
-// System headers
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "shader.hpp"
@@ -19,7 +16,6 @@
 glm::vec3 cam_pos(0.0f, 0.0f, 5.0f);
 glm::vec3 yup(0.0f, 1.0f, 0.0f);
 Simp::Camera camera(cam_pos, yup, window_width, window_height);
-Simp::World world(camera);
 
 double last_x_pos, last_y_pos;
 bool _first = true;
@@ -28,6 +24,7 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 void ProcessInput(GLFWwindow* window, double deltatime);
 void MouseCallback(GLFWwindow* window, double x_pos, double y_pos);
 void ScrollCallback(GLFWwindow* window, double x_offset, double y_offset);
+void drawPointLights(Simp::Shader& shader, const Simp::World& world, GLuint vao, GLuint size);
 
 int main()
 {
@@ -51,39 +48,38 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	stbi_set_flip_vertically_on_load(true);
-
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize 	GLAD." << std::endl;
 		return -1;
 	}
-
 	Simp::debug();
 
 	Simp::Shader phongShader;
-	phongShader
-		.attach("phong.vert")
-		.attach("phong.frag").link();
 	Simp::Shader whiteShader;
-	whiteShader
-		.attach("white.vert")
-		.attach("white.frag").link();
+	phongShader.attach("phong.vert").attach("phong.frag").link();
+	whiteShader.attach("white.vert").attach("white.frag").link();
+
+	Simp::World world(camera);
+	// Simp::DirectionalLight directionalLight = { glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
+	// world.attachLight(directionalLight);
+	Simp::OtherLight pointLight = { glm::vec4(1.2f, 0.5f, 1.5f, 1.0f), glm::vec3(0.5f) };
+	world.attachLight(pointLight);
+	world.bindBuffer(phongShader);
+	world.bind();
 
 	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/backpack/backpack.obj");
 	auto plane_vao = Simp::createPlane();
 	auto light_cube_vao = Simp::createCube();
-
-	float currentframe = 0.0f;
-	float previousframe = 0.0f;
-	float deltatime;
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
-	Simp::DirectionalLight light{ glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(.8f, .8f, .8f) };
-	world.attachLight(light);
+	float currentframe = 0.0f;
+	float previousframe = 0.0f;
+	float deltatime;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -100,29 +96,21 @@ int main()
 		auto projection = camera.getProjectionMatrix();
 		auto view = camera.getViewMatrix();
 
-		whiteShader.use();
-		whiteShader.bind("view", view);
-		whiteShader.bind("projection", projection);
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(1.2f, 0.5f, 1.5f));
-		model = glm::scale(model, glm::vec3(0.2f));
-		whiteShader.bind("model", model);
-		glBindVertexArray(light_cube_vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
+		drawPointLights(whiteShader, world, light_cube_vao, 36);
 
 		glm::mat4 modelBackpack(1.0f);
 		modelBackpack = glm::translate(modelBackpack, glm::vec3(0.0f, 1.0f, 0.0f));
 		modelBackpack = glm::scale(modelBackpack, glm::vec3(0.5f, 0.5f, 0.5f));
 
 		phongShader.use();
+		phongShader.bind("ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+		phongShader.bind("cameraPos", camera.getPosition());
 		phongShader.bind("model", modelBackpack);
 		phongShader.bind("view", view);
 		phongShader.bind("projection", projection);
-		phongShader.bind("invModel", glm::inverseTranspose(modelBackpack));
+		phongShader.bind("invModel", glm::mat3(glm::inverseTranspose(modelBackpack)));
 		phongShader.bind("material.light_maps", true);
 		phongShader.bind("material.shininess", 32.0f);
-		world.bind(phongShader);
 		backpack.draw(phongShader);
 
 		glm::mat4 model2(1.0f);
@@ -195,4 +183,22 @@ void MouseCallback(GLFWwindow*, double x_pos, double y_pos)
 void ScrollCallback(GLFWwindow*, double, double y_offset)
 {
 	camera.processMouseScroll(static_cast<float>(y_offset));
+}
+
+void drawPointLights(Simp::Shader& shader, const Simp::World& world, GLuint vao, GLuint size)
+{
+	auto lights = world.getOtherLights();
+	for (unsigned int i = 0; i < lights.size(); i++)
+	{
+		glm::mat4 model(1.0f);
+		model = glm::translate(model, glm::vec3(lights[i].pos));
+		model = glm::scale(model, glm::vec3(0.2f));
+		shader.use();
+		shader.bind("view", camera.getViewMatrix());
+		shader.bind("projection", camera.getProjectionMatrix());
+		shader.bind("model", model);
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, size);
+		glBindVertexArray(0);
+	}
 }

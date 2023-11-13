@@ -25,8 +25,8 @@ namespace Simp
 
 		GLuint getHandle() const { return id; }
 
-		void bind(GLuint location, bool value);
 		void bind(GLuint location, int value);
+		void bind(GLuint location, bool value);
 		void bind(GLuint location, float value);
 		void bind(GLuint location, const glm::vec3& value);
 		void bind(GLuint location, const glm::mat3& value);
@@ -37,8 +37,7 @@ namespace Simp
 		{
 			GLuint location = glGetUniformLocation(id, path.c_str());
 			if (location == -1)
-				std::cout << "WARNING::uniform location missing! "
-					<< path << std::endl;
+				std::cout << "WARNING::uniform location missing! " << path << std::endl;
 			else
 				bind(location, std::forward<T>(value));
 			return *this;

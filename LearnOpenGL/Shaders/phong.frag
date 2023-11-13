@@ -10,6 +10,7 @@ out vec4 FragColor;
 
 uniform float uTime;
 uniform vec3 cameraPos;
+uniform vec3 ambient;
 
 struct Material {
 	bool light_maps;
@@ -39,7 +40,7 @@ Surface getSurface(Material material) {
 	surface.normal = normalize(varyings.Normal);
 	surface.viewDir = normalize(cameraPos - varyings.WSPosition);
 
-	if (material.light_maps) {
+	if(material.light_maps) {
 		surface.diffuse = vec3(texture(material.texture_diffuse0, varyings.TexCoords));
 		surface.specular = vec3(texture(material.texture_specular0, varyings.TexCoords));
 	} else {
@@ -51,32 +52,22 @@ Surface getSurface(Material material) {
 	return surface;
 }
 
-// Utility
-
-float saturate(float value) {
-	return clamp(value, 0.0, 1.0);
-}
-
 // Light calculation.
 
 #define MAX_DIRECTIONAL_LIGHTS 4
-#define MAX_OTHER_LIGHTS 16
+#define MAX_OTHER_LIGHTS 32
 
-layout(std140) uniform DirLights {
-	uniform int directionalLightNum;
-	uniform vec3 directionalLightDirections[MAX_DIRECTIONAL_LIGHTS];
-	uniform vec3 directionalLightColors[MAX_DIRECTIONAL_LIGHTS];
+struct DirLight {
+	vec3 dir;
+	vec3 color;
 };
 
-layout(std140) uniform OtherLights {
-	uniform int otherLightNum;
-	uniform vec4 otherLightPositions[MAX_OTHER_LIGHTS];
-	uniform vec3 otherLightColors[MAX_OTHER_LIGHTS];
-	uniform vec3 otherLightDirections[MAX_OTHER_LIGHTS];
-	uniform vec2 otherLightAttenuations[MAX_OTHER_LIGHTS];
+struct OtherLight {
+	vec4 pos;
+	vec3 color;
+	vec3 dir;
+	vec2 angle;
 };
-
-uniform vec3 ambient;
 
 struct Light {
 	vec3 dir;
@@ -84,40 +75,51 @@ struct Light {
 	float attenuation;
 };
 
-float angleAttenuation(int index) {
-	vec3 direction = otherLightDirections[index];
-	vec2 angles = otherLightAttenuations[index];
-
-	// TODO
-
-	return 1.0;
-}
+layout(std140) uniform Lights {
+	uniform int directionalLightNum;
+	uniform int otherLightNum;
+	uniform DirLight directionalLight[MAX_DIRECTIONAL_LIGHTS];
+	uniform OtherLight otherLights[MAX_OTHER_LIGHTS];
+};
 
 Light GetDirLight(int index) {
 	Light light;
-	light.dir = directionalLightDirections[index];
-	light.color = directionalLightColors[index];
+	light.dir = -directionalLight[index].dir;
+	light.color = directionalLight[index].color;
 	light.attenuation = 1.0;
 	return light;
 }
 
+float attenuation(float dist, float r) 
+{
+	return 1.0;
+}
+
+float angleAttenuation(int index) {
+	vec3 direction = -otherLights[index].dir;
+	vec2 angles = otherLights[index].angle;
+	return 1.0;
+}
+
 Light GetOtherLight(int index, Surface surface) {
-	vec3 lightDir = otherLightPositions[index].xyz - surface.pos;
+	vec3 lightDir = otherLights[index].pos.xzy - surface.pos;
+	float atten = attenuation(length(lightDir), otherLights[index].pos.w);
+	float attenAngle = angleAttenuation(index);
 
 	Light light;
 	light.dir = normalize(lightDir);
-	light.color = otherLightColors[index];
-	light.attenuation = otherLightPositions[index].w * angleAttenuation(index);
+	light.color = otherLights[index].color;
+	light.attenuation = atten * attenAngle;
 	return light;
 }
 
 vec3 calculateLight(Surface surface, Light light) {
 	vec3 reflectDir = reflect(-light.dir, surface.normal);
 
-	float diff = saturate(dot(surface.normal, light.dir));
+	float diff = clamp(dot(surface.normal, light.dir), 0.0, 1.0);
 	vec3 diffuse = diff * surface.diffuse;
 
-	float spec = pow(saturate(dot(reflectDir, surface.viewDir)), surface.shininess);
+	float spec = pow(clamp(dot(reflectDir, surface.viewDir), 0.0, 1.0), surface.shininess);
 	vec3 specular = spec * surface.specular;
 
 	return (diffuse + specular) * light.color * light.attenuation;
