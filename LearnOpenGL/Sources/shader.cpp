@@ -76,6 +76,11 @@ namespace Simp
 		return *this;
 	}
 
+	void Shader::bind(GLuint location, GLuint value)
+	{
+		glUniform1ui(location, value);
+	}
+
 	void Shader::bind(GLuint location, int value)
 	{
 		glUniform1i(location, value);

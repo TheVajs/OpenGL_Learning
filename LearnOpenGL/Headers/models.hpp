@@ -4,12 +4,12 @@ namespace Simp
 {
 	float vertices_plane[] =
 	{
-		-0.5f, 0.0f, -0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.0f, -0.5f, 0.0f, 1.0f, 0.0f,
-		-0.5f, 0.0f, -0.5f, 0.0f, 1.0f, 0.0f,
-		-0.5f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f
+		-0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.0f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+		-0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f
 	};
 
 	float box_vertices[] =
@@ -196,18 +196,19 @@ namespace Simp
 		GLuint plane_vao;
 		GLuint plane_vbo;
 
-		// GLuint diffuse_map = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/container2.png");
-		// GLuint specular_map = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/container2_specular.png");
-
 		glGenVertexArrays(1, &plane_vao);
 		glGenBuffers(1, &plane_vbo);
 		glBindVertexArray(plane_vao);
 		glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_plane), vertices_plane, GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+
 		glBindVertexArray(0);
 		glDeleteBuffers(1, &plane_vbo);
 		return plane_vao;
@@ -224,15 +225,15 @@ namespace Simp
 
 		glGenVertexArrays(1, &cube_vao);
 		glBindVertexArray(cube_vao);
-		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
 		// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 		// glEnableVertexAttribArray(1);
 		// glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 		// glEnableVertexAttribArray(2);
+
 		glBindVertexArray(0);
 		glDeleteBuffers(1, &cube_vbo);
-
 		return cube_vao;
 	}
 }

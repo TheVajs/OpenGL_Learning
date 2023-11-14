@@ -55,27 +55,22 @@ int main()
 	}
 	Simp::debug();
 
-
-
 	Simp::Shader phongShader;
 	Simp::Shader whiteShader;
 	phongShader.attach("phong.vert").attach("phong.frag").link();
 	whiteShader.attach("white.vert").attach("white.frag").link();
+	GLuint planeDiffuse = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/wood.png");;
 
 	Simp::World world(camera);
-
-	// Simp::DirectionalLight directionalLight = { glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
-	// world.attachLight(directionalLight);
-
-	// Lights to pointers
-
-	Simp::OtherLight pointLight(glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 5.0f), glm::vec3(2.0f));
+	Simp::DirectionalLight dirLight(glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f)), glm::vec3(0.01f));
+	world.attachLight(dirLight);
+	Simp::OtherLight pointLight(glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 10.0f), glm::vec3(1.0f));
 	world.attachLight(pointLight);
-	Simp::OtherLight spotLight(glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 10.0f), glm::vec3(2.0f),
+	Simp::OtherLight spotLight(glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 10.0f), glm::vec3(1.0f),
 		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)), 45.0f, 30.0f);
 	world.attachLight(spotLight);
 	world.bindBuffer(phongShader);
-	world.bind();
+	world.bindLights();
 
 	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/backpack/backpack.obj");
 	auto plane_vao = Simp::createPlane();
@@ -84,9 +79,16 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	// glDepthMask(GL_FALSE);  disable or enbale writing to depth buffer
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
+
+	// glEnable(GL_BLEND);
+	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// You need to sort by ascending depth order to render transparent objects,
+	// So the depth test does not interfire with rendering. Also sort opeque bo ascending depth,
+	// improves performance. But sorting allot of objects with different shapes is a hard task. 
 
 	float currentframe = 0.0f;
 	float previousframe = 0.0f;
@@ -109,17 +111,18 @@ int main()
 		auto view = camera.getViewMatrix();
 
 		phongShader.use();
+		phongShader.bind("cameraPos", camera.getPosition());
+		phongShader.bind("exposure", 2.0f);
+
 		glm::mat4 modelBackpack(1.0f);
 		modelBackpack = glm::translate(modelBackpack, glm::vec3(0.0f, 1.0f, 0.0f));
 		modelBackpack = glm::scale(modelBackpack, glm::vec3(0.5f, 0.5f, 0.5f));
-		phongShader.bind("ambient", glm::vec3(0.05f, 0.05f, 0.05f));
-		phongShader.bind("cameraPos", camera.getPosition());
 		phongShader.bind("model", modelBackpack);
 		phongShader.bind("view", view);
 		phongShader.bind("projection", projection);
 		phongShader.bind("invModel", glm::mat3(glm::inverseTranspose(modelBackpack)));
-		phongShader.bind("material.light_maps", true);
 		phongShader.bind("material.shininess", 32.0f);
+		phongShader.bind("material.light_maps", 3u);
 		backpack.draw(phongShader);
 
 		glm::mat4 model2(1.0f);
@@ -131,7 +134,15 @@ int main()
 		glm::mat4 model3(1.0f);
 		model3 = glm::translate(model3, glm::vec3(0.0f, -1.0f, 0.0f));
 		model3 = glm::scale(model3, glm::vec3(10.0f, 0.0f, 10.0f));
-		phongShader.bind("model", model3);
+		phongShader.bind("model", model3); 
+		phongShader.bind("material.light_maps", 1u);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		phongShader.bind("material.texture_diffuse0", 0);
+		phongShader.bind("material.specular", glm::vec3(1.0f));
+		phongShader.bind("material.shininess", 16.0f);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, planeDiffuse);
 		glBindVertexArray(plane_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 

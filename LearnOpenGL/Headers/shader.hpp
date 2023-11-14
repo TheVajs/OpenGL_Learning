@@ -24,7 +24,8 @@ namespace Simp
 		Shader& link();
 
 		GLuint getHandle() const { return id; }
-
+	
+		void bind(GLuint location, GLuint value);
 		void bind(GLuint location, int value);
 		void bind(GLuint location, bool value);
 		void bind(GLuint location, float value);

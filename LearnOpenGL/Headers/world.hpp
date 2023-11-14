@@ -15,6 +15,7 @@ namespace Simp
 	{
 		glm::vec3 dir;
 		glm::vec3 color;
+		DirectionalLight(glm::vec3 _dir, glm::vec3 _color) : dir(_dir), color(_color) {}
 	};
 
 	struct OtherLight
@@ -63,7 +64,8 @@ namespace Simp
 		World& attachLight(const OtherLight& light);
 
 		void bindBuffer(const Shader& shader);
-		void bind();
+		// TODO bind camera to shader
+		void bindLights();
 
 		const std::vector<DirectionalLight>& getDirectionalLights() const
 		{

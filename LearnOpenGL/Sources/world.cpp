@@ -45,7 +45,7 @@ namespace Simp
 		glUniformBlockBinding(id, uniformBlockIndex, 0);
 	}
 
-	void World::bind()
+	void World::bindLights()
 	{
 		GLuint offset = 0;
 

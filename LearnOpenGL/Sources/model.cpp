@@ -87,11 +87,8 @@ namespace Simp
 		if (mesh->mMaterialIndex >= 0)
 		{
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			auto diffuse = loadMaterialTextures(material, aiTextureType_DIFFUSE,
-				Simp::TextureType::Diffuse);
-			auto specular = loadMaterialTextures(material, aiTextureType_SPECULAR,
-				Simp::TextureType::Specular);
-
+			auto diffuse = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Diffuse);
+			auto specular = loadMaterialTextures(material, aiTextureType_SPECULAR, TextureType::Specular);
 			textures.insert(textures.begin(), diffuse.begin(), diffuse.end());
 			textures.insert(textures.begin(), specular.begin(), specular.end());
 		}
@@ -160,8 +157,14 @@ namespace Simp
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		GLint wrap = GL_REPEAT;
+		if (format == GL_RGBA || format == GL_ALPHA)
+		{
+			wrap = GL_CLAMP_TO_EDGE;
+		}
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glBindTexture(GL_TEXTURE_2D, 0);

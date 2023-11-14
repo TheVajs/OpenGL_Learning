@@ -45,9 +45,9 @@ namespace Simp
 		for (int i = 0; i < textures.size(); i++)
 		{
 			std::string uniform = "material.";
-			if (textures[i].type == 0)
+			if (textures[i].type == TextureType::Diffuse)
 				uniform += "texture_diffuse" + std::to_string(diffuseNum++);
-			else if (textures[i].type == 1)
+			else if (textures[i].type == TextureType::Specular)
 				uniform += "texture_specular" + std::to_string(specularNum++);
 
 			shader.bind(glGetUniformLocation(shader.getHandle(), uniform.c_str()), i);
