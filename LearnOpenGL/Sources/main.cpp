@@ -112,7 +112,6 @@ int main()
 
 		phongShader.use();
 		phongShader.bind("cameraPos", camera.getPosition());
-		phongShader.bind("exposure", 2.0f);
 
 		glm::mat4 modelBackpack(1.0f);
 		modelBackpack = glm::translate(modelBackpack, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -122,7 +121,8 @@ int main()
 		phongShader.bind("projection", projection);
 		phongShader.bind("invModel", glm::mat3(glm::inverseTranspose(modelBackpack)));
 		phongShader.bind("material.shininess", 32.0f);
-		phongShader.bind("material.light_maps", 3u);
+		phongShader.bind("material.light_maps", Simp::Shader::DIFFUSE | Simp::Shader::SPECULAR);
+		phongShader.bind("exposure", 2.0f);
 		backpack.draw(phongShader);
 
 		glm::mat4 model2(1.0f);
@@ -135,7 +135,7 @@ int main()
 		model3 = glm::translate(model3, glm::vec3(0.0f, -1.0f, 0.0f));
 		model3 = glm::scale(model3, glm::vec3(10.0f, 0.0f, 10.0f));
 		phongShader.bind("model", model3); 
-		phongShader.bind("material.light_maps", 1u);
+		phongShader.bind("material.light_maps", Simp::Shader::DIFFUSE);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		phongShader.bind("material.texture_diffuse0", 0);

@@ -59,9 +59,9 @@ uniform Material material;
 
 // Surface data holder
 
-const uint C_Diffuse = 0x00000001u;
-const uint C_Specular = 0x00000002u;
-const uint C_Normal = 0x00000004u;
+const uint cDiffuse = 0x00000001u;
+const uint cSpecular = 0x00000002u;
+const uint cNormal = 0x00000004u;
 #define MAP_DEFINDED(C) (material.light_maps & C) != 0u
 
 struct Surface {
@@ -79,13 +79,13 @@ Surface getSurface(Material material) {
 	surface.normal = normalize(varyings.Normal);
 	surface.viewDir = normalize(cameraPos - varyings.WSPosition);
 
-	if(MAP_DEFINDED(C_Diffuse)) {
+	if(MAP_DEFINDED(cDiffuse)) {
 		surface.diffuse = decodeSRGB(texture(material.texture_diffuse0, varyings.TexCoords).xyz);
 	} else {
 		surface.diffuse = material.diffuse;
 	}
 
-	if(MAP_DEFINDED(C_Specular)) {
+	if(MAP_DEFINDED(cSpecular)) {
 		surface.specular = decodeSRGB(texture(material.texture_specular0, varyings.TexCoords).xyz);
 	} else {
 		surface.specular = material.specular;

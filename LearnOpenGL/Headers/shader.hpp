@@ -15,6 +15,10 @@ namespace Simp
 	class Shader
 	{
 	public:
+		const static unsigned int DIFFUSE = 0x00000001u;
+		const static unsigned int SPECULAR = 0x00000002u;
+		const static unsigned int NORMAL = 0x00000004u;
+
 		Shader() { id = glCreateProgram(); }
 		~Shader() { glDeleteProgram(id); }
 
