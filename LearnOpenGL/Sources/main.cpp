@@ -55,16 +55,44 @@ int main()
 	}
 	Simp::debug();
 
+
+
 	Simp::Shader phongShader;
 	Simp::Shader whiteShader;
 	phongShader.attach("phong.vert").attach("phong.frag").link();
 	whiteShader.attach("white.vert").attach("white.frag").link();
 
 	Simp::World world(camera);
+	
 	// Simp::DirectionalLight directionalLight = { glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
 	// world.attachLight(directionalLight);
-	Simp::OtherLight pointLight = { glm::vec4(1.2f, 0.5f, 1.5f, 1.0f), glm::vec3(0.5f) };
+
+	// Lights to pointers
+
+	float outter = glm::cos(glm::radians(360.0f) * 0.5f);
+	float inner = glm::cos(glm::radians(360.0f) * 0.5f);
+	float invRange = 1.0f / fmax(inner - outter, 1e-4f);
+	Simp::OtherLight pointLight =
+	{
+		glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 5.0f),
+		glm::vec3(2.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		glm::vec2(invRange, -outter * invRange)
+	};
 	world.attachLight(pointLight);
+
+	outter = glm::cos(glm::radians(30.0f) * 0.5f);
+	inner = glm::cos(glm::radians(20.0f) * 0.5f);
+	invRange = 1.0f / fmax(inner - outter, 1e-4f);
+	Simp::OtherLight spotLight =
+	{
+		glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 10.0f),
+		glm::vec3(2.0f),
+		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)),
+		glm::vec2(invRange, -outter * invRange)
+	};
+
+	world.attachLight(spotLight);
 	world.bindBuffer(phongShader);
 	world.bind();
 
@@ -83,9 +111,6 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		{
 			currentframe = static_cast<float>(glfwGetTime());
 			deltatime = currentframe - previousframe;
@@ -93,16 +118,17 @@ int main()
 			ProcessInput(window, deltatime);
 		}
 
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		drawPointLights(whiteShader, world, light_cube_vao, 36);
+
 		auto projection = camera.getProjectionMatrix();
 		auto view = camera.getViewMatrix();
 
-		drawPointLights(whiteShader, world, light_cube_vao, 36);
-
+		phongShader.use();
 		glm::mat4 modelBackpack(1.0f);
 		modelBackpack = glm::translate(modelBackpack, glm::vec3(0.0f, 1.0f, 0.0f));
 		modelBackpack = glm::scale(modelBackpack, glm::vec3(0.5f, 0.5f, 0.5f));
-
-		phongShader.use();
 		phongShader.bind("ambient", glm::vec3(0.05f, 0.05f, 0.05f));
 		phongShader.bind("cameraPos", camera.getPosition());
 		phongShader.bind("model", modelBackpack);

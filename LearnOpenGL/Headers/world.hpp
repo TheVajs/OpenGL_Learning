@@ -23,6 +23,11 @@ namespace Simp
 		glm::vec3 color;
 		glm::vec3 dir;
 		glm::vec2 angles;
+
+		// OtherLight(const glm::vec4& pos, const glm::vec3& color) 
+		// {
+
+		// }
 	};
 
 	class World

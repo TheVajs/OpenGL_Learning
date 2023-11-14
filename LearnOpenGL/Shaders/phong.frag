@@ -1,5 +1,7 @@
 #version 330 core
 
+#define PI 3.1415926535897932384626433832795028841972
+
 // Interface blocks, helps organize varying values.
 in vs_out {
 	vec3 Normal;
@@ -66,7 +68,7 @@ struct OtherLight {
 	vec4 pos;
 	vec3 color;
 	vec3 dir;
-	vec2 angle;
+	vec2 spotAngles;
 };
 
 struct Light {
@@ -90,24 +92,38 @@ Light GetDirLight(int index) {
 	return light;
 }
 
-float attenuation(float dist, float r) 
-{
-	return 1.0;
+#define SQUER_FALLOF
+
+float getAttenuation(int index, vec3 posToLight) {
+#if defined(SQUER_FALLOF_SIMPLE)
+	float dist = length(posToLight);
+	float I = otherLights[index].pos.w;
+	return I / (4 * PI * dist * dist);
+#elif defined(SQUER_FALLOF)
+	float lightInvRadius = otherLights[index].pos.w;
+	float distanceSquare = dot(posToLight, posToLight);
+	float factor = distanceSquare * lightInvRadius * lightInvRadius;
+	float smoothFactor = max(1.0 - factor * factor, 0.0);
+	return (smoothFactor * smoothFactor) / max(distanceSquare, 1e-4);
+#endif
 }
 
-float angleAttenuation(int index) {
-	vec3 direction = -otherLights[index].dir;
-	vec2 angles = otherLights[index].angle;
-	return 1.0;
+float getSpotAngleAtteuation(int index, vec3 dirToLight) {
+	vec2 spot = otherLights[index].spotAngles;
+	vec3 direction = normalize(-otherLights[index].dir);
+
+	return clamp(dot(direction, dirToLight) * spot.x + spot.y, 0.0, 1.0);
 }
 
 Light GetOtherLight(int index, Surface surface) {
-	vec3 lightDir = otherLights[index].pos.xzy - surface.pos;
-	float atten = attenuation(length(lightDir), otherLights[index].pos.w);
-	float attenAngle = angleAttenuation(index);
+	vec3 posToLight = vec3(otherLights[index].pos) - surface.pos;
+	vec3 dirToLight = normalize(posToLight);
+
+	float atten = getAttenuation(index, posToLight);
+	float attenAngle = getSpotAngleAtteuation(index, dirToLight);
 
 	Light light;
-	light.dir = normalize(lightDir);
+	light.dir = dirToLight;
 	light.color = otherLights[index].color;
 	light.attenuation = atten * attenAngle;
 	return light;
@@ -115,9 +131,11 @@ Light GetOtherLight(int index, Surface surface) {
 
 vec3 calculateLight(Surface surface, Light light) {
 	vec3 reflectDir = reflect(-light.dir, surface.normal);
+	vec3 n = surface.normal;
+	vec3 l = light.dir;
 
-	float diff = clamp(dot(surface.normal, light.dir), 0.0, 1.0);
-	vec3 diffuse = diff * surface.diffuse;
+	float NoL = clamp(dot(n, l), 0.0, 1.0);
+	vec3 diffuse = NoL * surface.diffuse;
 
 	float spec = pow(clamp(dot(reflectDir, surface.viewDir), 0.0, 1.0), surface.shininess);
 	vec3 specular = spec * surface.specular;
