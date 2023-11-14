@@ -24,10 +24,25 @@ namespace Simp
 		glm::vec3 dir;
 		glm::vec2 angles;
 
-		// OtherLight(const glm::vec4& pos, const glm::vec3& color) 
-		// {
+		OtherLight(glm::vec4 _pos, glm::vec3 _color)
+			: pos(_pos), color(_color), dir(glm::vec3(1.0f, 0.0f, 0.0f))
+		{
+			angles = calculateSpotAngle(360.0f, 360.0f);
+		}
 
-		// }
+		OtherLight(glm::vec4 _pos, glm::vec3 _color, glm::vec3 _dir, float outter, float inner)
+			: pos(_pos), color(_color), dir(_dir)
+		{
+			angles = calculateSpotAngle(outter, inner);
+		}
+
+		glm::vec2 calculateSpotAngle(float outter, float inner) const
+		{
+			float outCos = glm::cos(glm::radians(outter) * 0.5f);
+			float inCos = glm::cos(glm::radians(inner) * 0.5f);
+			float invRange = 1.0f / fmax(inCos - outCos, 1e-4f);
+			return glm::vec2(invRange, -outCos * invRange);
+		}
 	};
 
 	class World

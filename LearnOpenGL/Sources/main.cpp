@@ -63,35 +63,16 @@ int main()
 	whiteShader.attach("white.vert").attach("white.frag").link();
 
 	Simp::World world(camera);
-	
+
 	// Simp::DirectionalLight directionalLight = { glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
 	// world.attachLight(directionalLight);
 
 	// Lights to pointers
 
-	float outter = glm::cos(glm::radians(360.0f) * 0.5f);
-	float inner = glm::cos(glm::radians(360.0f) * 0.5f);
-	float invRange = 1.0f / fmax(inner - outter, 1e-4f);
-	Simp::OtherLight pointLight =
-	{
-		glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 5.0f),
-		glm::vec3(2.0f),
-		glm::vec3(1.0f, 0.0f, 0.0f),
-		glm::vec2(invRange, -outter * invRange)
-	};
+	Simp::OtherLight pointLight(glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 5.0f), glm::vec3(2.0f));
 	world.attachLight(pointLight);
-
-	outter = glm::cos(glm::radians(30.0f) * 0.5f);
-	inner = glm::cos(glm::radians(20.0f) * 0.5f);
-	invRange = 1.0f / fmax(inner - outter, 1e-4f);
-	Simp::OtherLight spotLight =
-	{
-		glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 10.0f),
-		glm::vec3(2.0f),
-		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)),
-		glm::vec2(invRange, -outter * invRange)
-	};
-
+	Simp::OtherLight spotLight(glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 10.0f), glm::vec3(2.0f),
+		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)), 45.0f, 30.0f);
 	world.attachLight(spotLight);
 	world.bindBuffer(phongShader);
 	world.bind();
@@ -101,6 +82,8 @@ int main()
 	auto light_cube_vao = Simp::createCube();
 
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	// glDepthMask(GL_FALSE);  disable or enbale writing to depth buffer
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
