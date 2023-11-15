@@ -12,6 +12,16 @@ namespace Simp
 		-0.5f,  0.0f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f
 	};
 
+	float quad[] =
+	{
+		-1.0f, -1.0f, 0.0f, 0.0f,
+		1.0f, -1.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 0.0f, 1.0f,
+	};
+
 	float box_vertices[] =
 	{
 		-0.5f, -0.5f, -0.5f,
@@ -102,7 +112,8 @@ namespace Simp
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	float cube_normals[] = {
+	float cube_normals[] =
+	{
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -146,7 +157,8 @@ namespace Simp
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 	};
 
-	float cube_all[] = {
+	float cube_all[] =
+	{
 		// positions          // normals           // texture coords
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
 		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
@@ -227,13 +239,31 @@ namespace Simp
 		glBindVertexArray(cube_vao);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
-		// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-		// glEnableVertexAttribArray(1);
-		// glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-		// glEnableVertexAttribArray(2);
-
 		glBindVertexArray(0);
-		glDeleteBuffers(1, &cube_vbo);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// glDeleteBuffers(1, &cube_vbo);
 		return cube_vao;
+	}
+
+	GLuint createQuad()
+	{
+		GLuint vao;
+		GLuint quad_vbo;
+		glGenBuffers(1, &quad_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+
+		glGenVertexArrays(0, &vao);
+		glBindVertexArray(vao);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		glBindVertexArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDeleteBuffers(1, &quad_vbo);
+		return vao;
 	}
 }

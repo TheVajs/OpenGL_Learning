@@ -17,7 +17,7 @@ glm::vec3 cam_pos(0.0f, 0.0f, 5.0f);
 glm::vec3 yup(0.0f, 1.0f, 0.0f);
 Simp::Camera camera(cam_pos, yup, window_width, window_height);
 
-double last_x_pos, last_y_pos;
+double lastPosX, lastPosY;
 bool _first = true;
 
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -77,16 +77,15 @@ int main()
 	world.bindBuffer(phongShader);
 	Simp::Shader whiteShader;
 	whiteShader.attach("white.vert").attach("white.frag").link();
+	Simp::Shader screenShader;
+	screenShader.attach("screen.vert").attach("screen.frag").link();
 
 	// Models
 
 	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/backpack/backpack.obj");
-	auto plane_vao = Simp::createPlane();
-	auto light_cube_vao = Simp::createCube();
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	// glDepthMask(GL_FALSE);
+	GLuint plane_vao = Simp::createPlane();
+	GLuint light_cube_vao = Simp::createCube();
+	GLuint quad_vao = Simp::createQuad();
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -97,6 +96,36 @@ int main()
 	// improves performance. But sorting allot of objects with different shapes is a hard task. 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Framebuffers
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo); // GL_READ_FRAMEBUFFER, GL_DRAW_FRAMEBUFFER
+
+	GLuint tbo;
+	glGenTextures(1, &tbo);
+	glBindTexture(GL_TEXTURE_2D, tbo);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// Render buffers are writte-only. So because we are not going te read from the depth buffer, we use RBO.
+	GLuint rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, window_width, window_height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tbo, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "ERROR:: framebuffer not complete!" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	float current = 0.0f;
 	float previous = 0.0f;
@@ -113,18 +142,15 @@ int main()
 			ProcessInput(window, deltaTime);
 		}
 
-		auto point{ world.getOtherLights()[0].get() };
-		point->pos.x = 2.0f * glm::cos(.25f * glm::pi<float>() * time);
-		point->pos.z = 2.0f * glm::sin(.25f * glm::pi<float>() * time);
-
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		// glDepthMask(GL_FALSE);
 
 		world.bindLights();
 		world.drawPointLights(camera, whiteShader, light_cube_vao, 36);
-
-		auto projection = camera.getProjectionMatrix();
-		auto view = camera.getViewMatrix();
 
 		phongShader.use();
 		phongShader.bind("cameraPos", camera.getPosition());
@@ -132,19 +158,13 @@ int main()
 		modelBackpack = glm::translate(modelBackpack, glm::vec3(0.0f, 1.0f, 0.0f));
 		modelBackpack = glm::scale(modelBackpack, glm::vec3(0.5f, 0.5f, 0.5f));
 		phongShader.bind("model", modelBackpack);
-		phongShader.bind("view", view);
-		phongShader.bind("projection", projection);
+		phongShader.bind("view", camera.getViewMatrix());
+		phongShader.bind("projection", camera.getProjectionMatrix());
 		phongShader.bind("invModel", glm::mat3(glm::inverseTranspose(modelBackpack)));
 		phongShader.bind("material.shininess", 32.0f);
 		phongShader.bind("material.maps", Simp::Shader::DIFFUSE | Simp::Shader::SPECULAR);
 		phongShader.bind("exposure", 1.0f);
 		backpack.draw(phongShader);
-
-		// glm::mat4 model2(1.0f);
-		// model2 = glm::translate(model2, glm::vec3(0.0f, 0.0f, 2.0f));
-		// model2 = glm::scale(model2, glm::vec3(0.5f, 0.5f, 0.5f));
-		// phongShader.bind("model", model2);
-		// backpack.draw(phongShader);
 
 		glm::mat4 model3(1.0f);
 		model3 = glm::translate(model3, glm::vec3(0.0f, -1.0f, 0.0f));
@@ -161,12 +181,32 @@ int main()
 		glBindVertexArray(plane_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		auto point{ world.getOtherLights()[0].get() };
+		point->pos.x = 2.0f * glm::cos(.25f * glm::pi<float>() * time);
+		point->pos.z = 2.0f * glm::sin(.25f * glm::pi<float>() * time);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDisable(GL_DEPTH_TEST);
+
+		screenShader.use();
+		glBindVertexArray(quad_vao);
+		glBindTexture(GL_TEXTURE_2D, tbo);
+		screenShader.bind("screenTexture", 0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
+	glDeleteVertexArrays(1, &quad_vao);
 	glDeleteVertexArrays(1, &plane_vao);
 	glDeleteVertexArrays(1, &light_cube_vao);
+
+	glDeleteTextures(1, &tbo);
+	glDeleteRenderbuffers(1, &rbo);
+	glDeleteFramebuffers(1, &fbo);
 
 	glfwTerminate();
 	return EXIT_SUCCESS;
@@ -203,16 +243,16 @@ void MouseCallback(GLFWwindow*, double x_pos, double y_pos)
 {
 	if (_first)
 	{
-		last_x_pos = x_pos, last_y_pos = y_pos;
+		lastPosX = x_pos;
+		lastPosY = y_pos;
 		_first = false;
 	}
 
-	double x_offset = x_pos - last_x_pos;
-	double y_offset = last_y_pos - y_pos;
-	last_x_pos = x_pos;
-	last_y_pos = y_pos;
-
-	camera.processMouseMovement(static_cast<float>(x_offset), static_cast<float>(y_offset));
+	double offsetX = x_pos - lastPosX;
+	double offsetY = lastPosY - y_pos;
+	lastPosX = x_pos;
+	lastPosY = y_pos;
+	camera.processMouseMovement(static_cast<float>(offsetX), static_cast<float>(offsetY));
 }
 
 void ScrollCallback(GLFWwindow*, double, double y_offset)
