@@ -14,12 +14,13 @@ namespace Simp
 
 	float quad[] =
 	{
-		-1.0f, -1.0f, 0.0f, 0.0f,
-		1.0f, -1.0f, 1.0f, 0.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 0.0f, 1.0f,
+		-1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
 	};
 
 	float box_vertices[] =
@@ -205,14 +206,15 @@ namespace Simp
 
 	GLuint createPlane()
 	{
-		GLuint plane_vao;
-		GLuint plane_vbo;
+		GLuint vao;
+		GLuint vbo;
 
-		glGenVertexArrays(1, &plane_vao);
-		glGenBuffers(1, &plane_vbo);
-		glBindVertexArray(plane_vao);
-		glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_plane), vertices_plane, GL_STATIC_DRAW);
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_plane), &vertices_plane[0], GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
@@ -220,50 +222,48 @@ namespace Simp
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 		glEnableVertexAttribArray(2);
-
 		glBindVertexArray(0);
-		glDeleteBuffers(1, &plane_vbo);
-		return plane_vao;
+		glDeleteBuffers(1, &vbo);
+		return vao;
 	}
 
 	GLuint createCube()
 	{
-		GLuint cube_vbo;
-		GLuint cube_vao;
+		GLuint vbo;
+		GLuint vao;
 
-		glGenBuffers(1, &cube_vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_all), cube_all, GL_STATIC_DRAW);
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
 
-		glGenVertexArrays(1, &cube_vao);
-		glBindVertexArray(cube_vao);
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_all), &cube_all[0], GL_STATIC_DRAW);
+
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		glBindVertexArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		// glDeleteBuffers(1, &cube_vbo);
-		return cube_vao;
+		glDeleteBuffers(1, &vbo);
+		return vao;
 	}
 
 	GLuint createQuad()
 	{
 		GLuint vao;
-		GLuint quad_vbo;
-		glGenBuffers(1, &quad_vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+		GLuint vbo;
 
-		glGenVertexArrays(0, &vao);
+		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
+
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quad), &quad[0], GL_STATIC_DRAW);
+
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 		glEnableVertexAttribArray(1);
 		glBindVertexArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glDeleteBuffers(1, &quad_vbo);
+		glDeleteBuffers(1, &vbo);
 		return vao;
 	}
 }

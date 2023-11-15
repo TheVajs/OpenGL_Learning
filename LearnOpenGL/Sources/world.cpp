@@ -28,7 +28,7 @@ namespace Simp
 	{
 		float outCos = glm::cos(glm::radians(outter) * 0.5f);
 		float inCos = glm::cos(glm::radians(inner) * 0.5f);
-		float invRange = 1.0f / fmax(inCos - outCos, 1e-4f);
+		float invRange = 1.0f / fmax(inCos - outCos, 1e-5f);
 		return glm::vec2(invRange, -outCos * invRange);
 	}
 
