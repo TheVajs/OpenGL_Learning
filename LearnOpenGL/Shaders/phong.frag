@@ -8,7 +8,7 @@
 // _Time - Time since level load (t/20, t, t*2, t*3), use to animate things inside the shaders.
 // _SinTime _CosTime = (t/8, t/4, t/2, t).
 // unity_DeltaTime = Delta time: (dt, 1/dt, smoothDt, 1/smoothDt)
-uniform vec4 time;
+uniform vec4 _Time;
 
 // https://www.shadertoy.com/view/lscSzl
 vec3 encodeSRGB(vec3 linearRGB) {
@@ -47,10 +47,9 @@ uniform float exposure;
 out vec4 FragColor;
 
 struct Material {
-	uint light_maps;
+	uint maps;
 	sampler2D texture_diffuse0;
 	sampler2D texture_specular0;
-	// http://devernay.free.fr/cours/opengl/materials.html (old vay to simulate materials)
 	vec3 diffuse;
 	vec3 specular;
 	float shininess;
@@ -62,7 +61,7 @@ uniform Material material;
 const uint cDiffuse = 0x00000001u;
 const uint cSpecular = 0x00000002u;
 const uint cNormal = 0x00000004u;
-#define MAP_DEFINDED(C) (material.light_maps & C) != 0u
+#define MAP_DEFINDED(C) (material.maps & C) != 0u
 
 struct Surface {
 	vec3 pos;

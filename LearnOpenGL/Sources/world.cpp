@@ -1,13 +1,38 @@
 #include "world.hpp"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <iostream>
 
 namespace Simp
 {
-	World::World(const Camera& cam) : camera(cam)
+	OtherLight::OtherLight(glm::vec4 _pos, glm::vec3 _color) :
+		pos(_pos), color(_color), dir(glm::vec3(1.0f, 0.0f, 0.0f)), angles(calculateSpotAngle(360.0f, 360.0f))
+	{
+	}
+
+	OtherLight::OtherLight(glm::vec4 _pos, glm::vec3 _color, glm::vec3 _dir, float outter, float inner)
+		: pos(_pos), color(_color), dir(_dir), angles(calculateSpotAngle(outter, inner))
+	{
+	}
+
+	const std::vector<std::unique_ptr<DirectionalLight>>& World::getDirectionalLights() const
+	{
+		return directionalLights;
+	}
+
+	const std::vector<std::unique_ptr<OtherLight>>& World::getOtherLights() const
+	{
+		return otherLights;
+	}
+
+	glm::vec2 OtherLight::calculateSpotAngle(float outter, float inner) const
+	{
+		float outCos = glm::cos(glm::radians(outter) * 0.5f);
+		float inCos = glm::cos(glm::radians(inner) * 0.5f);
+		float invRange = 1.0f / fmax(inCos - outCos, 1e-4f);
+		return glm::vec2(invRange, -outCos * invRange);
+	}
+
+	World::World()
 	{
 		glGenBuffers(1, &ubo);
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
@@ -15,17 +40,17 @@ namespace Simp
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
-	World& World::attachLight(const DirectionalLight& light)
+	World& World::attachLight(std::unique_ptr<DirectionalLight>& light)
 	{
-		assert(directionalLights.size() < MAX_DIRECTIONAL_LIGHTS);
-		directionalLights.push_back(light);
+		SIMP_ASSERT(directionalLights.size() < MAX_DIRECTIONAL_LIGHTS);
+		directionalLights.push_back(std::move(light));
 		return *this;
 	}
 
-	World& World::attachLight(const OtherLight& light)
+	World& World::attachLight(std::unique_ptr<OtherLight>& light)
 	{
-		assert(otherLights.size() < MAX_OTHER_LIGHTS);
-		otherLights.push_back(light);
+		SIMP_ASSERT(otherLights.size() < MAX_OTHER_LIGHTS);
+		otherLights.push_back(std::move(light));
 		return *this;
 	}
 
@@ -61,25 +86,45 @@ namespace Simp
 
 		for (unsigned int i = 0; i < directionalLights.size(); i++)
 		{
-			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(directionalLights[i].dir));
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(directionalLights[i].get()->dir));
 			offset += 16;
-			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(directionalLights[i].color));
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(directionalLights[i].get()->color));
 			offset += 16;
 		}
-		offset += (MAX_DIRECTIONAL_LIGHTS - directionalLights.size()) * 32;
+		offset += (MAX_DIRECTIONAL_LIGHTS - static_cast<int>(directionalLights.size())) * 32;
 
 		for (unsigned int i = 0; i < otherLights.size(); i++)
 		{
-			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].pos));
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].get()->pos));
 			offset += 16;
-			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].color));
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].get()->color));
 			offset += 16;
-			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].dir));
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].get()->dir));
 			offset += 16;
-			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].angles));
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, 16, glm::value_ptr(otherLights[i].get()->angles));
 			offset += 16;
 		}
 
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+
+	void World::drawPointLights(const Camera& camera, Shader& shader, GLuint vao, GLuint size) const
+	{
+		shader.use();
+		glBindVertexArray(vao);
+		shader.bind("view", camera.getViewMatrix());
+		shader.bind("projection", camera.getProjectionMatrix());
+
+		for (unsigned int i = 0; i < otherLights.size(); i++)
+		{
+			glm::mat4 model(1.0f);
+			glm::vec3 position(otherLights[i].get()->pos);
+			model = glm::translate(model, position);
+			model = glm::scale(model, glm::vec3(0.2f));
+			shader.bind("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, size);
+		}
+
+		glBindVertexArray(0);
 	}
 }
