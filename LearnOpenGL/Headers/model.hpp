@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glad/glad.h> 
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <assimp/Importer.hpp>
@@ -15,14 +13,11 @@
 #include "mesh.hpp"
 
 #include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <vector>
 
 namespace Simp
 {
-	unsigned int loadTexture(const std::string& path);
+	unsigned int loadTexture(const std::string& path, bool flip);
 
 	class Model
 	{

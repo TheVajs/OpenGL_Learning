@@ -7,25 +7,29 @@
 
 namespace Simp
 {
-	struct Vertex
-	{
-		glm::vec3 position;
-		glm::vec3 normal;
-		glm::vec2 uv;
-	};
-
 	enum TextureType
 	{
 		Diffuse = 0,
 		Specular = 1,
 	};
 
+#pragma pack(push, 1)
+	struct Vertex
+	{
+		glm::vec3 position;
+		glm::vec3 normal;
+		glm::vec2 uv;
+	};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
 	struct Texture
 	{
 		GLuint id;
 		TextureType type;
 		std::string path;
 	};
+#pragma pack(pop)
 
 	class Mesh
 	{

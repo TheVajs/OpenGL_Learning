@@ -1,7 +1,5 @@
 #include "model.hpp"
 
-#include <stb_image.h>
-
 namespace Simp
 {
 	Model::Model(const std::string& path)
@@ -21,15 +19,12 @@ namespace Simp
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			std::cout << "ERROR::ASSIMP" << importer.GetErrorString() << std::endl;
+			std::cerr << "ERROR::ASSIMP" << importer.GetErrorString() << std::endl;
 			return;
 		}
 
 		directory = path.substr(0, path.find_last_of('/'));
-
 		processNode(scene->mRootNode, scene);
-		// const aiNode* node = scene->mRootNode->mChildren[0];
-		// processMesh(scene->mMeshes[node->mMeshes[0]], scene);
 	}
 
 	void Model::draw(Shader& shader)
@@ -120,7 +115,7 @@ namespace Simp
 				return textures;
 
 			Texture texture;
-			texture.id = loadTexture(directory + '/' + relPath);
+			texture.id = loadTexture(directory + '/' + relPath, true);
 			texture.type = type;
 			texture.path = relPath;
 			textures.push_back(texture);
@@ -128,49 +123,5 @@ namespace Simp
 		}
 
 		return textures;
-	}
-
-	GLuint loadTexture(const std::string& path)
-	{
-		GLuint texture;
-		GLenum format = GL_RED;
-
-		int width, height;
-		int channelNum;
-		unsigned char* data = stbi_load(path.c_str(), &width, &height, &channelNum, 0);
-		if (*data == NULL)
-		{
-			std::cout << "WARNING::Failed to load image! " << path << std::endl;
-			return 0;
-		}
-
-		switch (channelNum)
-		{
-		case 1: format = GL_ALPHA;     break;
-		case 2: format = GL_LUMINANCE; break;
-		case 3: format = GL_RGB;       break;
-		case 4: format = GL_RGBA;      break;
-		}
-
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		GLint wrap = GL_REPEAT;
-		if (format == GL_RGBA || format == GL_ALPHA)
-		{
-			wrap = GL_CLAMP_TO_EDGE;
-		}
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		stbi_image_free(data);
-
-		return texture;
 	}
 }

@@ -14,6 +14,7 @@
 
 namespace Simp
 {
+#pragma pack(push, 1)
 	struct DirectionalLight
 	{
 		glm::vec3 dir;
@@ -21,7 +22,9 @@ namespace Simp
 
 		DirectionalLight(glm::vec3 _dir, glm::vec3 _color) : dir(_dir), color(_color) {}
 	};
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 	struct OtherLight
 	{
 		glm::vec4 pos;
@@ -32,8 +35,10 @@ namespace Simp
 		OtherLight(glm::vec4 _pos, glm::vec3 _color);
 		OtherLight(glm::vec4 _pos, glm::vec3 _color, glm::vec3 _dir, float outter, float inner);
 
+	private:
 		glm::vec2 calculateSpotAngle(float outter, float inner) const;
 	};
+#pragma pack(pop)
 
 	class World
 	{

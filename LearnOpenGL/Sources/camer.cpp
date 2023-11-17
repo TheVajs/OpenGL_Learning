@@ -2,13 +2,23 @@
 
 namespace Simp
 {
-	Camera::Camera(glm::vec3 position, glm::vec3 yup, int width, int height) : yaw(YAW), pitch(PITCH),
-		movement_speed(SPEED), mouse_sensitivity(SENSITIVITY), zoom(ZOOM), zNear(0.1f), zFar(100.0f)
+	Camera::Camera(glm::vec3 position, glm::vec3 yup, int width, int height) : yaw(Camera::YAW), pitch(Camera::PITCH),
+		movementSpeed(Camera::SPEED), mouseSensitivity(Camera::SENSITIVITY), verticalFov(Camera::FOV), zNear(0.1f), zFar(100.0f)
 	{
 		this->position = position;
 		this->yup = yup;
 		resize(width, height);
 		updateLocalVectors();
+	}
+
+	glm::mat4 Camera::getViewMatrix() const
+	{
+		return glm::lookAt(position, position + w, yup);
+	}
+
+	glm::mat4 Camera::getProjectionMatrix() const
+	{
+		return glm::perspective(glm::radians(verticalFov), aspectratio, zNear, zFar);
 	}
 
 	void Camera::resize(int _width, int _height)
@@ -18,20 +28,19 @@ namespace Simp
 		aspectratio = static_cast<float>(width) / static_cast<float>(height);
 	}
 
-	void Camera::processKeyboard(const glm::vec3& direction, float deltaTime)
+	void Camera::processKeyboard(const glm::vec3& dir, float deltaTime)
 	{
-		glm::mat3 invRot = glm::inverse(glm::mat3(getViewMatrix()));
-		position += invRot * -direction * (movement_speed * deltaTime);
+		glm::mat3 invRot = glm::transpose(glm::mat3(getViewMatrix()));
+		position += invRot * -dir * (movementSpeed * deltaTime);
 	}
 
-	void Camera::processMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch)
+	void Camera::processMouseMovement(float xoffset, float yoffset, bool constrainPitch)
 	{
-		xoffset *= mouse_sensitivity;
-		yoffset *= mouse_sensitivity;
+		xoffset *= mouseSensitivity;
+		yoffset *= mouseSensitivity;
 
 		yaw += xoffset;
 		pitch += yoffset;
-
 		if (constrainPitch)
 		{
 			if (pitch > 89.0f)
@@ -45,11 +54,11 @@ namespace Simp
 
 	void Camera::processMouseScroll(float yoffset)
 	{
-		zoom -= yoffset;
-		if (zoom < 1.0f)
-			zoom = 1.0f;
-		if (zoom > 45.0f)
-			zoom = 45.0f;
+		verticalFov -= yoffset;
+		if (verticalFov < 1.0f)
+			verticalFov = 1.0f;
+		if (verticalFov > 45.0f)
+			verticalFov = 45.0f;
 	}
 
 	void Camera::updateLocalVectors()

@@ -24,7 +24,7 @@ namespace Simp
 		}
 		catch (std::ifstream::failure e)
 		{
-			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: "
+			std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: "
 				<< path + fileName << std::endl;
 		}
 		vShaderFile.close();
@@ -40,8 +40,8 @@ namespace Simp
 			glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 			std::unique_ptr<char[]> infoLog(new char[length]);
 			glGetShaderInfoLog(shader, length, NULL, infoLog.get());
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED " << fileName << "\n"
-				<< infoLog.get() << std::endl;
+			std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED " 
+				<< fileName << "\n" << infoLog.get() << std::endl;
 		}
 
 		glAttachShader(id, shader);
@@ -69,7 +69,7 @@ namespace Simp
 			glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 			std::unique_ptr<char[]> infoLog(new char[length]);
 			glGetProgramInfoLog(id, length, NULL, infoLog.get());
-			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+			std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
 				<< infoLog.get() << std::endl;
 		}
 		assert(status);
