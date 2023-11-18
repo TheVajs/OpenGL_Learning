@@ -2,10 +2,9 @@
 
 namespace Simp
 {
-	Shader& Shader::use()
+	void Shader::use()
 	{
 		glUseProgram(id);
-		return *this;
 	}
 
 	Shader& Shader::attach(const std::string& fileName)
@@ -40,7 +39,7 @@ namespace Simp
 			glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 			std::unique_ptr<char[]> infoLog(new char[length]);
 			glGetShaderInfoLog(shader, length, NULL, infoLog.get());
-			std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED " 
+			std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED "
 				<< fileName << "\n" << infoLog.get() << std::endl;
 		}
 

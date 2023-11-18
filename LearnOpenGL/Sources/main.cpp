@@ -6,10 +6,10 @@
 #include <glad/glad.h>
 
 #include "texture.hpp"
-#include "shader.hpp"
 #include "camera.hpp"
 #include "model.hpp"
 #include "models.hpp"
+#include "shader.hpp"
 #include "world.hpp"
 #include "debug.hpp"
 
@@ -119,7 +119,7 @@ int main()
 	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/meshes/backpack/backpack.obj");
 	GLuint vaoPlane = Simp::createPlane();
 	GLuint vaoCube = Simp::createCube();
-	GLuint textureDiffuseWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood.png", false);
+	GLuint textureDiffuseWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood.png", true);
 
 	std::vector<std::string> cubeFaces{
 		PROJECT_SOURCE_DIR "/Resources/Textures/skybox/right.jpg",
@@ -134,7 +134,6 @@ int main()
 	// Frame buffer / Texture buffer / Render buffer
 
 	GLuint* bufferHandels = initializeFrameBuffer();
-
 	
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -185,7 +184,7 @@ int main()
 		phongShader.bind("projection", camera.getProjectionMatrix());
 		phongShader.bind("invModel", glm::mat3(glm::inverseTranspose(modelBackpack)));
 		phongShader.bind("material.shininess", 32.0f);
-		phongShader.bind("material.maps", Simp::Shader::DIFFUSE | Simp::Shader::SPECULAR);
+		phongShader.bind("material.maps", Simp::DIFFUSE | Simp::SPECULAR | Simp::NORMAL);
 		phongShader.bind("exposure", 1.0f);
 		backpack.draw(phongShader);
 
@@ -194,7 +193,7 @@ int main()
 		model3 = glm::scale(model3, glm::vec3(10.0f, 0.0f, 10.0f));
 		phongShader.bind("model", model3);
 		phongShader.bind("material.texture_diffuse0", 0);
-		phongShader.bind("material.maps", Simp::Shader::DIFFUSE);
+		phongShader.bind("material.maps", Simp::DIFFUSE);
 		phongShader.bind("material.specular", glm::vec3(1.0f));
 		phongShader.bind("material.shininess", 64.0f);
 		glBindTexture(GL_TEXTURE_2D, textureDiffuseWood);

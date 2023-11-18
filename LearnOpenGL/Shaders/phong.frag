@@ -36,9 +36,10 @@ vec3 exposureMapping(vec3 color, float exposure) {
 // Material varying/uniforms
 
 in vs_out {
-	vec3 Normal;
 	vec3 WSPosition;
 	vec2 TexCoords;
+	vec3 Normal;
+	mat3 TBN;
 } varyings;
 
 uniform vec3 cameraPos;
@@ -50,6 +51,7 @@ struct Material {
 	uint maps;
 	sampler2D texture_diffuse0;
 	sampler2D texture_specular0;
+	sampler2D texture_normal0;
 	vec3 diffuse;
 	vec3 specular;
 	float shininess;
@@ -75,19 +77,25 @@ struct Surface {
 Surface getSurface(Material material) {
 	Surface surface;
 	surface.pos = varyings.WSPosition;
-	surface.normal = normalize(varyings.Normal);
 	surface.viewDir = normalize(cameraPos - varyings.WSPosition);
 
 	if(MAP_DEFINDED(cDiffuse)) {
-		surface.diffuse = decodeSRGB(texture(material.texture_diffuse0, varyings.TexCoords).xyz);
+		surface.diffuse = decodeSRGB(texture(material.texture_diffuse0, varyings.TexCoords).rgb);
 	} else {
 		surface.diffuse = material.diffuse;
 	}
 
 	if(MAP_DEFINDED(cSpecular)) {
-		surface.specular = decodeSRGB(texture(material.texture_specular0, varyings.TexCoords).xyz);
+		surface.specular = decodeSRGB(texture(material.texture_specular0, varyings.TexCoords).rgb);
 	} else {
 		surface.specular = material.specular;
+	}
+
+	if(MAP_DEFINDED(cNormal)) {
+		surface.normal = texture(material.texture_normal0, varyings.TexCoords).rgb * 2.0 - 1.0;
+		surface.normal = normalize(varyings.TBN * surface.normal);
+	} else {
+		surface.normal = normalize(varyings.Normal);
 	}
 
 	surface.shininess = material.shininess;

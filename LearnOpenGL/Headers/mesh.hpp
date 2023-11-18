@@ -11,7 +11,12 @@ namespace Simp
 	{
 		Diffuse = 0,
 		Specular = 1,
+		Normal = 2
 	};
+	
+	const unsigned int DIFFUSE = 0x00000001u;
+	const unsigned int SPECULAR = 0x00000002u;
+	const unsigned int NORMAL = 0x00000004u;
 
 #pragma pack(push, 1)
 	struct Vertex
@@ -19,6 +24,8 @@ namespace Simp
 		glm::vec3 position;
 		glm::vec3 normal;
 		glm::vec2 uv;
+		glm::vec3 tangent;
+		glm::vec3 bitangent;
 	};
 #pragma pack(pop)
 

@@ -15,20 +15,15 @@ namespace Simp
 	class Shader
 	{
 	public:
-		const static unsigned int DIFFUSE = 0x00000001u;
-		const static unsigned int SPECULAR = 0x00000002u;
-		const static unsigned int NORMAL = 0x00000004u;
-
 		Shader() { id = glCreateProgram(); }
 		~Shader() { glDeleteProgram(id); }
 
 		Shader& attach(const std::string& fileName);
-		GLuint create(const std::string& fileName);
-		Shader& use();
 		Shader& link();
+		void use();
 
 		GLuint getHandle() const { return id; }
-	
+
 		void bind(GLuint location, GLuint value);
 		void bind(GLuint location, int value);
 		void bind(GLuint location, bool value);
@@ -52,6 +47,8 @@ namespace Simp
 		// Disable Copying and Assignment
 		Shader(Shader const&) = delete;
 		Shader& operator=(Shader const&) = delete;
+
+		GLuint create(const std::string& fileName);
 
 		GLuint id;
 		GLint status;

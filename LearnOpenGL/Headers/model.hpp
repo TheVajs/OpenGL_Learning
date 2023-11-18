@@ -23,13 +23,7 @@ namespace Simp
 	{
 	public:
 		Model(const std::string& path);
-
-		~Model()
-		{
-#if DEBUG_ASSIMP
-			Assimp::DefaultLogger::kill();
-#endif
-		}
+		~Model();
 
 		void draw(Shader& shader);
 	private:

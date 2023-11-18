@@ -7,7 +7,8 @@ namespace Simp
 #if DEBUG_ASSIMP
 		Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE);
 		Assimp::LogStream* stderrStream = Assimp::LogStream::createDefaultStream(aiDefaultLogStream_STDERR);
-		Assimp::DefaultLogger::get()->attachStream(stderrStream, Assimp::Logger::NORMAL | Assimp::Logger::DEBUGGING | Assimp::Logger::VERBOSE);
+		Assimp::DefaultLogger::get()->attachStream(stderrStream, Assimp::Logger::NORMAL |
+			Assimp::Logger::DEBUGGING | Assimp::Logger::VERBOSE);
 #endif
 
 		Assimp::Importer importer;
@@ -25,6 +26,13 @@ namespace Simp
 
 		directory = path.substr(0, path.find_last_of('/'));
 		processNode(scene->mRootNode, scene);
+	}
+
+	Model::~Model()
+	{
+#if DEBUG_ASSIMP
+		Assimp::DefaultLogger::kill();
+#endif
 	}
 
 	void Model::draw(Shader& shader)
@@ -58,6 +66,8 @@ namespace Simp
 			Vertex vertex;
 			vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 			vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+			vertex.tangent = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+			// vertex.bitangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
 
 			if (mesh->mTextureCoords[0])
 			{
@@ -84,8 +94,10 @@ namespace Simp
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 			auto diffuse = loadMaterialTextures(material, aiTextureType_DIFFUSE, TextureType::Diffuse);
 			auto specular = loadMaterialTextures(material, aiTextureType_SPECULAR, TextureType::Specular);
+			auto normals = loadMaterialTextures(material, aiTextureType_HEIGHT, TextureType::Normal);
 			textures.insert(textures.begin(), diffuse.begin(), diffuse.end());
 			textures.insert(textures.begin(), specular.begin(), specular.end());
+			textures.insert(textures.begin(), normals.begin(), normals.end());
 		}
 
 		meshes.push_back(std::unique_ptr<Mesh>(new Mesh(vertices, indices, textures)));
