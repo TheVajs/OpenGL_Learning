@@ -96,7 +96,7 @@ int main()
 	// auto dirLight{ std::make_unique<Simp::DirectionalLight>(
 	// 	glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f)), glm::vec3(0.91f)) };
 	// world.attachLight(dirLight);
-	auto pointLight{ std::make_unique<Simp::OtherLight>(glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 10.0f), glm::vec3(1.0f)) };
+	auto pointLight{ std::make_unique<Simp::OtherLight>(glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 10.0f), glm::vec3(5.0f)) };
 	world.attachLight(pointLight);
 	auto spotLight{ std::make_unique<Simp::OtherLight>(glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 50.0f), glm::vec3(20.0f),
 		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)), 30.0f, 25.0f) };
@@ -119,7 +119,8 @@ int main()
 	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/meshes/backpack/backpack.obj");
 	GLuint vaoPlane = Simp::createPlane();
 	GLuint vaoCube = Simp::createCube();
-	GLuint textureDiffuseWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood.png", true);
+	GLuint textureDiffuseWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood/diffuse.jpg");
+	GLuint textureNormalWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood/normals.png");
 
 	std::vector<std::string> cubeFaces{
 		PROJECT_SOURCE_DIR "/Resources/Textures/skybox/right.jpg",
@@ -193,12 +194,18 @@ int main()
 		model3 = glm::scale(model3, glm::vec3(10.0f, 0.0f, 10.0f));
 		phongShader.bind("model", model3);
 		phongShader.bind("material.texture_diffuse0", 0);
-		phongShader.bind("material.maps", Simp::DIFFUSE);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureDiffuseWood);
+		phongShader.bind("material.texture_normal0", 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureNormalWood);
+		phongShader.bind("material.maps", Simp::DIFFUSE | Simp::NORMAL);
 		phongShader.bind("material.specular", glm::vec3(1.0f));
 		phongShader.bind("material.shininess", 64.0f);
-		glBindTexture(GL_TEXTURE_2D, textureDiffuseWood);
+
 		glBindVertexArray(vaoPlane);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glActiveTexture(GL_TEXTURE0);
 
 		// Draw sky box last
 

@@ -35,7 +35,7 @@ namespace Simp
 
 		stbi_set_flip_vertically_on_load(flip);
 		unsigned char* data = stbi_load(path.c_str(), &width, &height, &channelNum, 0);
-		if (*data == NULL)
+		if (data == nullptr)
 		{
 			std::cerr << "WARNING::Failed to load image! " << path << std::endl;
 			stbi_image_free(data);
@@ -84,7 +84,7 @@ namespace Simp
 			unsigned char* data = stbi_load(images[i].c_str(), &width, &height, &channelNum, 0);
 			format = getFormat(channelNum);
 
-			if (!data)
+			if (data == nullptr)
 			{
 				std::cerr << "WARNING::Failed to load cube map image!" << std::endl;
 			}
