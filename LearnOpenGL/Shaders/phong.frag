@@ -29,8 +29,23 @@ vec3 gamma(vec3 color, float g) {
 	return pow(color, vec3(g));
 }
 
-vec3 exposureMapping(vec3 color, float exposure) {
-	return vec3(1.0) - exp(-color * exposure);
+vec3 exposureMapping(vec3 v, float exposure) {
+	return 1.0 - exp(-v * exposure);
+}
+
+vec3 toneMapping(vec3 v) {
+	return v / max(v, 1.0);
+}
+
+const vec2 mapTo01 = vec2(0.159154943092, 0.318309886184);
+
+vec2 sampleSphericalMap(vec3 dir) {
+	// atan/atan2 has range of [-PI, PI], and sin has [-PI/2, PI/2] (with domanin [-1, 1]
+	// atan(y, x), atan(x/y) with [-PI/2, PI/2]
+	vec2 t = vec2(atan(dir.z, dir.x), asin(dir.y));
+	t *= mapTo01;
+	t += .5;
+	return t;
 }
 
 // Material varying/uniforms
@@ -44,6 +59,8 @@ in vs_out {
 
 uniform vec3 cameraPos;
 uniform float exposure;
+uniform sampler2D skybox;
+// uniform samplerCube skybox;
 
 out vec4 FragColor;
 
@@ -195,7 +212,7 @@ vec3 calculateLight(Surface surface, Light light) {
 	float RoV = dot(reflectDir, surface.viewDir);
 	float spec = kEnergyConservation * pow(clamp(RoV, 0.0, 1.0), s);
 #endif
-	vec3 specular = spec * surface.specular;
+	vec3 specular = spec * surface.specular; //  * texture2D(skybox, sampleSphericalMap(n)).rgb;
 
 	return (diffuse + specular) * light.color * light.attenuation;
 }
@@ -212,7 +229,8 @@ void main() {
 		color += calculateLight(surface, getOtherLight(i, surface));
 	}
 
-	color = exposureMapping(color, exposure);
+	// color = toneMapping(color, exposure);
+	color = toneMapping(color);
 	color = encodeSRGB(color);
 	FragColor = vec4(color, 1.0);
 }

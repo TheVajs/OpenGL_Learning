@@ -4,12 +4,6 @@
 #include <string>
 #include <vector>
 
-#include <glad/glad.h>
-// Reference: https://github.com/nothings/stb/blob/master/stb_image.h#L4
-// To use stb_image, add this in *one* C++ source file.
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 namespace Simp
 {
 	GLuint getFormat(int channelNum)
@@ -64,6 +58,39 @@ namespace Simp
 
 		return texture;
 	}
+
+	GLuint loadHDR(const std::string& path, bool flip = true)
+	{
+		GLuint texture;
+
+		int width;
+		int height;
+		int channelNum;
+
+		stbi_set_flip_vertically_on_load(flip);
+		float* data = stbi_loadf(path.c_str(), &width, &height, &channelNum, 0);
+		if (data == nullptr)
+		{
+			std::cerr << "WARNING::Failed to load hdr image! " << path << std::endl;
+			stbi_image_free(data);
+			return 0;
+		}
+
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16, width, height, 0, GL_RGB, GL_FLOAT, data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		stbi_image_free(data);
+
+		return texture;
+	}
+
 
 	GLuint loadCubemap(const std::vector<std::string> images, bool flip = true)
 	{

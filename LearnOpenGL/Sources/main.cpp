@@ -17,7 +17,7 @@ glm::f64vec2 lastMousePos;
 glm::vec3 camPos(0.0f, 1.0f, 5.0f);
 Simp::Camera camera(camPos, glm::vec3(0.0f, 1.0f, 0.0f), cWindowWidth, cWindowHeight);
 
-void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
+// void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 void ProcessInput(GLFWwindow* window, double deltaTime);
 void MouseCallback(GLFWwindow* window, double x_pos, double y_pos);
 void ScrollCallback(GLFWwindow* window, double x_offset, double y_offset);
@@ -78,9 +78,9 @@ int main()
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 	glfwSetCursorPosCallback(window, MouseCallback);
 	glfwSetScrollCallback(window, ScrollCallback);
+	// glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -93,14 +93,14 @@ int main()
 	lastMousePos.y = cWindowHeight * .5;
 
 	Simp::World world;
-	// auto dirLight{ std::make_unique<Simp::DirectionalLight>(
-	// 	glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f)), glm::vec3(0.91f)) };
-	// world.attachLight(dirLight);
+	auto dirLight{ std::make_unique<Simp::DirectionalLight>(
+		glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f)), glm::vec3(0.91f)) };
+	world.attachLight(dirLight);
 	auto pointLight{ std::make_unique<Simp::OtherLight>(glm::vec4(1.2f, 0.5f, 1.5f, 1.0f / 10.0f), glm::vec3(5.0f)) };
 	world.attachLight(pointLight);
-	auto spotLight{ std::make_unique<Simp::OtherLight>(glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 50.0f), glm::vec3(20.0f),
-		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)), 30.0f, 25.0f) };
-	world.attachLight(spotLight);
+	// auto spotLight{ std::make_unique<Simp::OtherLight>(glm::vec4(0.0f, 0.5f, 5.0f, 1.0f / 50.0f), glm::vec3(50.0f),
+	// 	glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)), 30.0f, 25.0f) };
+	// world.attachLight(spotLight);
 
 	// Shaders
 
@@ -121,6 +121,7 @@ int main()
 	GLuint vaoCube = Simp::createCube();
 	GLuint textureDiffuseWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood/diffuse.jpg");
 	GLuint textureNormalWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood/normals.png");
+	GLuint textureHDR = Simp::loadHDR(PROJECT_SOURCE_DIR "/Resources/Textures/meadow2.hdr");
 
 	std::vector<std::string> cubeFaces{
 		PROJECT_SOURCE_DIR "/Resources/Textures/skybox/right.jpg",
@@ -166,6 +167,11 @@ int main()
 
 		// Pass 1
 
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		glViewport(0, 0, width, height);
+		camera.resize(width, height);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, bufferHandels[0]);
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -178,6 +184,10 @@ int main()
 		phongShader.use();
 		phongShader.bind("cameraPos", camera.getPosition());
 		glm::mat4 modelBackpack(1.0f);
+		// glActiveTexture(GL_TEXTURE5);
+		// glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
+		// glBindTexture(GL_TEXTURE_2D, textureHDR);
+		// phongShader.bind("skybox", 6);
 		modelBackpack = glm::translate(modelBackpack, glm::vec3(0.0f, 1.0f, 0.0f));
 		modelBackpack = glm::scale(modelBackpack, glm::vec3(0.5f, 0.5f, 0.5f));
 		phongShader.bind("model", modelBackpack);
@@ -186,7 +196,7 @@ int main()
 		phongShader.bind("invModel", glm::mat3(glm::inverseTranspose(modelBackpack)));
 		phongShader.bind("material.shininess", 32.0f);
 		phongShader.bind("material.maps", Simp::DIFFUSE | Simp::SPECULAR | Simp::NORMAL);
-		phongShader.bind("exposure", 1.0f);
+		// phongShader.bind("exposure", 1.0f);
 		backpack.draw(phongShader);
 
 		glm::mat4 model3(1.0f);
@@ -205,16 +215,17 @@ int main()
 
 		glBindVertexArray(vaoPlane);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glActiveTexture(GL_TEXTURE0);
 
 		// Draw sky box last
 
 		glDisable(GL_CULL_FACE);
 		skyboxShader.use();
 		skyboxShader.bind("skybox", 0);
+		glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
+		glBindTexture(GL_TEXTURE_2D, textureHDR);
 		skyboxShader.bind("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
 		skyboxShader.bind("projection", camera.getProjectionMatrix());
-		glBindTexture(GL_TEXTURE_CUBE_MAP, textureCubeMap);
 		glBindVertexArray(vaoCube);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glEnable(GL_CULL_FACE);
@@ -242,11 +253,11 @@ int main()
 	return EXIT_SUCCESS;
 }
 
-void FramebufferSizeCallback(GLFWwindow*, int width, int height)
-{
-	glViewport(0, 0, width, height);
-	camera.resize(width, height);
-}
+// void FramebufferSizeCallback(GLFWwindow*, int width, int height)
+// {
+// 	glViewport(0, 0, width, height);
+// 	camera.resize(width, height);
+// }
 
 void ProcessInput(GLFWwindow* window, double deltaTime)
 {
