@@ -116,7 +116,7 @@ int main()
 
 	// Models & Textures
 
-	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/backpack/backpack.obj");
+	Simp::Model backpack(PROJECT_SOURCE_DIR "/Resources/meshes/backpack/backpack.obj");
 	GLuint vaoPlane = Simp::createPlane();
 	GLuint vaoCube = Simp::createCube();
 	GLuint textureDiffuseWood = Simp::loadTexture(PROJECT_SOURCE_DIR "/Resources/Textures/wood.png", false);
@@ -134,6 +134,8 @@ int main()
 	// Frame buffer / Texture buffer / Render buffer
 
 	GLuint* bufferHandels = initializeFrameBuffer();
+
+	
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
@@ -158,9 +160,9 @@ int main()
 
 		// Update objects
 
-		auto point{ world.getOtherLights()[0].get() };
-		point->pos.x = 2.0f * glm::cos(.25f * glm::pi<float>() * time);
-		point->pos.z = 2.0f * glm::sin(.25f * glm::pi<float>() * time);
+		auto& point { *world.getOtherLights()[0].get() };
+		point.pos.x = 2.0f * glm::cos(.25f * glm::pi<float>() * time);
+		point.pos.z = 2.0f * glm::sin(.25f * glm::pi<float>() * time);
 
 		// Pass 1
 
